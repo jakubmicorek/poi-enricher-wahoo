@@ -1,0 +1,503 @@
+<?xml version="1.0" encoding="utf-8"?>
+<gpx xmlns="http://www.topografix.com/GPX/1/1" version="1.1" creator="ChatGPT">
+  <wpt lat="47.084296" lon="15.429869">
+    <name>Warning</name>
+    <desc/>
+    <sym>warning</sym>
+    <type>warning</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.430529">
+    <name>Generic</name>
+    <desc/>
+    <sym>generic</sym>
+    <type>generic</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.431188">
+    <name>First Aid</name>
+    <desc/>
+    <sym>first_aid</sym>
+    <type>first_aid</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.431848">
+    <name>Hospital</name>
+    <desc/>
+    <sym>hospital</sym>
+    <type>hospital</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.432508">
+    <name>Pharmacy</name>
+    <desc/>
+    <sym>pharmacy</sym>
+    <type>pharmacy</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.433167">
+    <name>Bar</name>
+    <desc/>
+    <sym>bar</sym>
+    <type>bar</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.433827">
+    <name>Bicycle Shop / Repair</name>
+    <desc/>
+    <sym>bike_shop</sym>
+    <type>bike_shop</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.434486">
+    <name>Coffee</name>
+    <desc/>
+    <sym>coffee</sym>
+    <type>coffee</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.435146">
+    <name>Food</name>
+    <desc/>
+    <sym>food</sym>
+    <type>food</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.435806">
+    <name>Gas Station</name>
+    <desc/>
+    <sym>gas_station</sym>
+    <type>gas_station</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.436465">
+    <name>Groceries</name>
+    <desc/>
+    <sym>groceries</sym>
+    <type>groceries</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.437125">
+    <name>Shopping</name>
+    <desc/>
+    <sym>shopping</sym>
+    <type>shopping</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.437785">
+    <name>Water</name>
+    <desc/>
+    <sym>water</sym>
+    <type>water</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.438444">
+    <name>Wine / Winery</name>
+    <desc/>
+    <sym>winery</sym>
+    <type>winery</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.439104">
+    <name>Information</name>
+    <desc/>
+    <sym>info</sym>
+    <type>info</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.439763">
+    <name>Internet</name>
+    <desc/>
+    <sym>internet</sym>
+    <type>internet</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.440423">
+    <name>Library</name>
+    <desc/>
+    <sym>library</sym>
+    <type>library</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.441083">
+    <name>Lodging</name>
+    <desc/>
+    <sym>lodging</sym>
+    <type>lodging</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.441742">
+    <name>Shower</name>
+    <desc/>
+    <sym>shower</sym>
+    <type>shower</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.442402">
+    <name>Toilet</name>
+    <desc/>
+    <sym>toilet</sym>
+    <type>toilet</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.443062">
+    <name>Bike Parking</name>
+    <desc/>
+    <sym>bike_parking</sym>
+    <type>bike_parking</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.443721">
+    <name>Bike Share</name>
+    <desc/>
+    <sym>bike_share</sym>
+    <type>bike_share</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.444381">
+    <name>Chairlift</name>
+    <desc/>
+    <sym>chairlift</sym>
+    <type>chairlift</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.445040">
+    <name>E-Bike Charging</name>
+    <desc/>
+    <sym>e_bike_charging</sym>
+    <type>e_bike_charging</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.445700">
+    <name>Ferry Terminal</name>
+    <desc/>
+    <sym>ferry</sym>
+    <type>ferry</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.446360">
+    <name>Parking</name>
+    <desc/>
+    <sym>parking</sym>
+    <type>parking</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.447019">
+    <name>Transit Station</name>
+    <desc/>
+    <sym>transit</sym>
+    <type>transit</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.447679">
+    <name>Campsite</name>
+    <desc/>
+    <sym>campsite</sym>
+    <type>campsite</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.448339">
+    <name>Dog Park</name>
+    <desc/>
+    <sym>dog_park</sym>
+    <type>dog_park</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.448998">
+    <name>Geocache</name>
+    <desc/>
+    <sym>geocache</sym>
+    <type>geocache</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.449658">
+    <name>Park</name>
+    <desc/>
+    <sym>park</sym>
+    <type>park</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.450317">
+    <name>Shelter / Rest Area</name>
+    <desc/>
+    <sym>rest_area</sym>
+    <type>rest_area</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.450977">
+    <name>Trailhead</name>
+    <desc/>
+    <sym>trailhead</sym>
+    <type>trailhead</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.451637">
+    <name>Summit (Peak)</name>
+    <desc/>
+    <sym>summit</sym>
+    <type>summit</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.452296">
+    <name>Valley</name>
+    <desc/>
+    <sym>valley</sym>
+    <type>valley</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.452956">
+    <name>Checkpoint</name>
+    <desc/>
+    <sym>checkpoint</sym>
+    <type>checkpoint</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.453616">
+    <name>Climb (1st Cat.)</name>
+    <desc/>
+    <sym>climb_1st_cat</sym>
+    <type>climb_1st_cat</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.454275">
+    <name>Climb (2nd Cat.)</name>
+    <desc/>
+    <sym>climb_2nd_cat</sym>
+    <type>climb_2nd_cat</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.454935">
+    <name>Climb (3rd Cat.)</name>
+    <desc/>
+    <sym>climb_3rd_cat</sym>
+    <type>climb_3rd_cat</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.455595">
+    <name>Climb (4th Cat.)</name>
+    <desc/>
+    <sym>climb_4th_cat</sym>
+    <type>climb_4th_cat</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.456254">
+    <name>Climb (HC)</name>
+    <desc/>
+    <sym>climb_hors_cat</sym>
+    <type>climb_hors_cat</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.456914">
+    <name>Distance Marker</name>
+    <desc/>
+    <sym>distance_marker</sym>
+    <type>distance_marker</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.457573">
+    <name>Meeting Spot</name>
+    <desc/>
+    <sym>meeting_spot</sym>
+    <type>meeting_spot</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.458233">
+    <name>Segment Start</name>
+    <desc/>
+    <sym>segment_start</sym>
+    <type>segment_start</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.458893">
+    <name>Segment End</name>
+    <desc/>
+    <sym>segment_end</sym>
+    <type>segment_end</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.459552">
+    <name>Sprint</name>
+    <desc/>
+    <sym>sprint</sym>
+    <type>sprint</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.460212">
+    <name>Transition</name>
+    <desc/>
+    <sym>transition</sym>
+    <type>transition</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.460872">
+    <name>ATM</name>
+    <desc/>
+    <sym>atm</sym>
+    <type>atm</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.461531">
+    <name>Artwork</name>
+    <desc/>
+    <sym>art</sym>
+    <type>art</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.462191">
+    <name>Attraction</name>
+    <desc/>
+    <sym>attraction</sym>
+    <type>attraction</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.462850">
+    <name>For Kids</name>
+    <desc/>
+    <sym>for_kids</sym>
+    <type>for_kids</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.463510">
+    <name>Monument</name>
+    <desc/>
+    <sym>monument</sym>
+    <type>monument</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.464170">
+    <name>Viewpoint</name>
+    <desc/>
+    <sym>viewpoint</sym>
+    <type>viewpoint</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.464829">
+    <name>Restroom</name>
+    <desc/>
+    <sym>restroom</sym>
+    <type>restroom</type>
+  </wpt>
+  <wpt lat="47.084296" lon="15.465489">
+    <name>Fuel</name>
+    <desc/>
+    <sym>fuel</sym>
+    <type>fuel</type>
+  </wpt>
+  <trk>
+    <name>Test Track: aligned with waypoints (50 m spacing)</name>
+    <trkseg>
+      <trkpt lat="47.084296" lon="15.429869">
+        <time>2025-10-30T10:38:08Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.430529">
+        <time>2025-10-30T10:38:09Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.431188">
+        <time>2025-10-30T10:38:10Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.431848">
+        <time>2025-10-30T10:38:11Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.432508">
+        <time>2025-10-30T10:38:12Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.433167">
+        <time>2025-10-30T10:38:13Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.433827">
+        <time>2025-10-30T10:38:14Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.434486">
+        <time>2025-10-30T10:38:15Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.435146">
+        <time>2025-10-30T10:38:16Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.435806">
+        <time>2025-10-30T10:38:17Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.436465">
+        <time>2025-10-30T10:38:18Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.437125">
+        <time>2025-10-30T10:38:19Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.437785">
+        <time>2025-10-30T10:38:20Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.438444">
+        <time>2025-10-30T10:38:21Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.439104">
+        <time>2025-10-30T10:38:22Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.439763">
+        <time>2025-10-30T10:38:23Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.440423">
+        <time>2025-10-30T10:38:24Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.441083">
+        <time>2025-10-30T10:38:25Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.441742">
+        <time>2025-10-30T10:38:26Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.442402">
+        <time>2025-10-30T10:38:27Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.443062">
+        <time>2025-10-30T10:38:28Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.443721">
+        <time>2025-10-30T10:38:29Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.444381">
+        <time>2025-10-30T10:38:30Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.445040">
+        <time>2025-10-30T10:38:31Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.445700">
+        <time>2025-10-30T10:38:32Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.446360">
+        <time>2025-10-30T10:38:33Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.447019">
+        <time>2025-10-30T10:38:34Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.447679">
+        <time>2025-10-30T10:38:35Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.448339">
+        <time>2025-10-30T10:38:36Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.448998">
+        <time>2025-10-30T10:38:37Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.449658">
+        <time>2025-10-30T10:38:38Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.450317">
+        <time>2025-10-30T10:38:39Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.450977">
+        <time>2025-10-30T10:38:40Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.451637">
+        <time>2025-10-30T10:38:41Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.452296">
+        <time>2025-10-30T10:38:42Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.452956">
+        <time>2025-10-30T10:38:43Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.453616">
+        <time>2025-10-30T10:38:44Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.454275">
+        <time>2025-10-30T10:38:45Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.454935">
+        <time>2025-10-30T10:38:46Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.455595">
+        <time>2025-10-30T10:38:47Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.456254">
+        <time>2025-10-30T10:38:48Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.456914">
+        <time>2025-10-30T10:38:49Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.457573">
+        <time>2025-10-30T10:38:50Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.458233">
+        <time>2025-10-30T10:38:51Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.458893">
+        <time>2025-10-30T10:38:52Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.459552">
+        <time>2025-10-30T10:38:53Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.460212">
+        <time>2025-10-30T10:38:54Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.460872">
+        <time>2025-10-30T10:38:55Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.461531">
+        <time>2025-10-30T10:38:56Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.462191">
+        <time>2025-10-30T10:38:57Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.462850">
+        <time>2025-10-30T10:38:58Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.463510">
+        <time>2025-10-30T10:38:59Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.464170">
+        <time>2025-10-30T10:39:00Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.464829">
+        <time>2025-10-30T10:39:01Z</time>
+      </trkpt>
+      <trkpt lat="47.084296" lon="15.465489">
+        <time>2025-10-30T10:39:02Z</time>
+      </trkpt>
+    </trkseg>
+  </trk>
+</gpx>

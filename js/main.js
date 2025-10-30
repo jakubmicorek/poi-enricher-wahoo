@@ -17,7 +17,7 @@ import {
   buildOverpassQueryFromConfig,
   overpassFetch
 } from "./overpass.js";
-import { addPoisAsWaypointsToGpx } from "./gpx.js";
+import { addPoisAsWaypointsToGpx, stripWaypointsFromGpx } from "./gpx.js";
 
 /* ---------- Config state ---------- */
 let WAHOO = { version: 1, categories: [] };
@@ -42,7 +42,13 @@ let CORRIDOR_POLY = null;
 let SHOW_DISTANCE_LINES = true;
 
 /* ---------- Responsive ---------- */
-function isMobile() { return matchMedia("(max-width: 820px)").matches; }
+function isMobile() {
+  try {
+    return (window.matchMedia && matchMedia("(max-width: 820px)").matches) || window.innerWidth <= 820;
+  } catch {
+    return window.innerWidth <= 820;
+  }
+}
 function applyInitialPanelState() {
   const mob = isMobile();
   document.body.classList.toggle("mob", mob);
@@ -74,7 +80,14 @@ window.addEventListener("DOMContentLoaded", async () => {
     indexConfigs();
 
     // expose lookup so mapview can render waypoint icons for imported GPX
-    window.getWahooIconUrl = (id) => (WAHOO_ITEM_BY_ID.get(String(id))?.icon || null);
+    // expose lookup so mapview can render waypoint icons for imported GPX
+    window.getWahooIconUrl = (id) => {
+      const key = String(id || "").trim().toLowerCase();
+      const known = WAHOO_ITEM_BY_ID.get(key)?.icon || null;
+      // If not in wahoo.json (or empty sym/type), use a generic round fallback.
+      return known || "icons/undefined.svg";
+    };
+
 
     buildPoiPanel();
     buildAddPoiModalOptions();
@@ -312,7 +325,13 @@ function hookUi() {
   addEventListener("dragover", e => e.preventDefault());
   addEventListener("drop", onDrop);
 
-  const onCorridor = debounce(() => { drawSearchBoxAndCorridor(); updatePoiLayers(); updateExportUi(); }, 120);
+  // Corridor width change: redraw, recompute inside flags, then update layers/export
+  const onCorridor = debounce(() => {
+    drawSearchBoxAndCorridor();
+    recomputeInsideFlagsForAllFetched();
+    updatePoiLayers();
+    updateExportUi();
+  }, 120);
   $("#poi-range-m")?.addEventListener("input", onCorridor);
   $("#poi-range-m")?.addEventListener("change", onCorridor);
 
@@ -388,15 +407,21 @@ async function onFile(e) {
     if (!f) return;
     const text = await f.text();
     originalFilename = f.name || "route.gpx";
-    originalGpxXmlString = text; // keep all names exactly as-is
+
+    // NEW: optionally drop waypoints from the base GPX
+    const drop = !!$("#opt-drop-wpts")?.checked;
+    originalGpxXmlString = drop ? stripWaypointsFromGpx(text) : text;
+
     await showGpxText(originalGpxXmlString, originalFilename);
     drawSearchBoxAndCorridor();
+    recomputeInsideFlagsForAllFetched();
     setPoiStatus("GPX loaded.");
     updateExportUi();
   } catch (err) {
     setPoiStatus(`Loading GPX failed: ${err?.message || err}`);
   }
 }
+
 async function onDrop(e) {
   e.preventDefault();
   try {
@@ -407,9 +432,14 @@ async function onDrop(e) {
     }
     const text = await f.text();
     originalFilename = f.name || "route.gpx";
-    originalGpxXmlString = text; // keep names intact
+
+    // NEW: optionally drop waypoints from the base GPX
+    const drop = !!$("#opt-drop-wpts")?.checked;
+    originalGpxXmlString = drop ? stripWaypointsFromGpx(text) : text;
+
     await showGpxText(originalGpxXmlString, originalFilename);
     drawSearchBoxAndCorridor();
+    recomputeInsideFlagsForAllFetched();
     setPoiStatus("GPX loaded.");
     updateExportUi();
   } catch (err) {
@@ -475,6 +505,24 @@ function drawSearchBoxAndCorridor() {
     drawCorridor(CORRIDOR_POLY);
     setTimeout(() => getMap()?.invalidateSize(), 0);
   } catch {}
+}
+
+/* ---------- Inside recompute (called on corridor changes & after fetch) ---------- */
+function recomputeInsideFlagsForAllFetched() {
+  if (!ALL_FETCHED_POIS.length) return;
+  for (const f of ALL_FETCHED_POIS) {
+    try {
+      const [lon, lat] = f?.geometry?.coordinates || [];
+      const pt = turf.point([lon, lat]);
+      f.properties = f.properties || {};
+      f.properties._inside = (CORRIDOR_POLY && Number.isFinite(lat) && Number.isFinite(lon))
+        ? turf.booleanPointInPolygon(pt, CORRIDOR_POLY)
+        : false;
+    } catch {
+      if (!f.properties) f.properties = {};
+      f.properties._inside = false;
+    }
+  }
 }
 
 /* ---------- Fetching ---------- */
@@ -576,17 +624,8 @@ function toFeatures(overpassJson, selectedItems) {
 /* ---------- Public hook called after a fetch ---------- */
 function rememberFetchedPois(features = []) {
   ALL_FETCHED_POIS = Array.isArray(features) ? features.slice() : [];
-  if (CORRIDOR_POLY) {
-    for (const f of ALL_FETCHED_POIS) {
-      try {
-        const [lon, lat] = f?.geometry?.coordinates || [];
-        f.properties = f.properties || {};
-        f.properties._inside = (Number.isFinite(lat) && Number.isFinite(lon))
-          ? turf.booleanPointInPolygon([lon, lat], CORRIDOR_POLY.geometry)
-          : false;
-      } catch { f.properties._inside = false; }
-    }
-  }
+  // Mark inside/outside based on current corridor
+  recomputeInsideFlagsForAllFetched();
   updatePoiLayers();
 }
 window.rememberFetchedPois = rememberFetchedPois;
@@ -635,7 +674,7 @@ function updateExportUi() {
     return;
   }
 
-  // Fetched inside + selected (corridor filter) ...
+  // Fetched inside + selected (corridor filter)
   const exportFetched = LAST_INSIDE_SELECTED.map(f => {
     const [lon, lat] = f.geometry.coordinates;
     const tags = f.properties || {};
@@ -647,7 +686,7 @@ function updateExportUi() {
     };
   });
 
-  // ... plus ALL custom POIs (always export; no corridor/selection filter)
+  // Plus ALL custom POIs (always export)
   const exportCustom = custom.map(p => ({
     lat: p.lat,
     lon: p.lon,

@@ -1,8 +1,9 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <link rel="icon" type="image/png" href="./icons/wahoo/wahoo-generic-wpt-icon.png">
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title>Wahoo POI Enricher | GPX → Wahoo</title>
 
   <!-- Leaflet CSS -->
@@ -38,39 +39,31 @@
   <main class="app" role="main" aria-label="Map and panels">
     <!-- Left column -->
     <aside id="left-panel" class="panel-col open" aria-label="Left panel">
-      <section class="panel" aria-labelledby="about-title">
-        <h2 id="about-title">About</h2>
-        <p>
-          Load a GPX route and add nearby points of interest from OpenStreetMap: water taps, toilets, food, fuel, bike shops, campsites, viewpoints, and more. Alternatively, you can manually add POIs using the + button.
-          <a href="https://support.wahoofitness.com/hc/en-us/articles/30255756674194-Custom-Waypoints-and-POIs-on-ELEMNT-ACE-BOLT-3-and-ROAM-3">Exported waypoints use Wahoo-compatible types so devices like the ACE, BOLT 3, and ROAM 3 display the right icons.</a>
-          Tested on a ROAM 3: on-device maps currently render <code>water</code>, <code>food</code>, <code>summit</code>, <code>valley</code>, and <code>sprint</code> with dedicated icons; other documented types are shown as a <code>generic</code> marker.
-        </p>
-        <hr class="sep">
-        <div class="donate">
-          <p>If this tool helps you, consider supporting it:</p>
-          <a class="donate-btn" href="https://www.paypal.com/donate/?hosted_button_id=MJF3AHPSQGFLS" target="_blank" rel="noopener noreferrer">
-            <img alt="Donate via PayPal" src="https://img.shields.io/badge/Donate-PayPal-blue.svg">
-          </a>
-        </div>
-      </section>
 
       <section class="panel" aria-labelledby="load-title">
         <h2 id="load-title">Load GPX</h2>
         <p class="hint">Pick a <strong>.gpx</strong> file. Drag &amp; drop anywhere also works.</p>
-        <input id="file" type="file" accept=".gpx" />
+
+        <label class="hint" style="display:block;margin-bottom:8px">
+          <input id="opt-drop-wpts" type="checkbox"/>
+          Ignore waypoints from file (don’t load or re-export them)
+        </label>
+        <input id="file" type="file" accept=".gpx"/>
+
         <p id="status" class="status-in-box hint"></p>
       </section>
+
 
       <section class="panel" aria-labelledby="corridor-title">
         <h2 id="corridor-title">Corridor &amp; Export</h2>
         <div class="poi-controls" style="margin:0 0 8px">
           <label>Corridor width (m):
-            <input id="poi-range-m" type="number" min="5" step="5" value="100" />
+            <input id="poi-range-m" type="number" min="5" step="5" value="100"/>
           </label>
           <br>
           <label>
             Show line from POI to track:
-            <input id="toggle-lines" type="checkbox" checked />
+            <input id="toggle-lines" type="checkbox" checked/>
           </label>
         </div>
         <div class="poi-controls">
@@ -79,8 +72,29 @@
           </a>
         </div>
       </section>
-    </aside>
 
+
+      <section class="panel" aria-labelledby="about-title">
+        <h2 id="about-title">About</h2>
+        <p>
+          Load a GPX route and add nearby points of interest from OpenStreetMap: water taps, toilets, food, fuel, bike
+          shops, campsites, viewpoints, and more. Alternatively, you can manually add POIs using the + button.
+          <a href="https://support.wahoofitness.com/hc/en-us/articles/30255756674194-Custom-Waypoints-and-POIs-on-ELEMNT-ACE-BOLT-3-and-ROAM-3">Exported
+            waypoints use Wahoo-compatible types so devices like the ACE, BOLT 3, and ROAM 3 display the right icons.</a>
+          Tested on a ROAM 3: on-device maps currently render <code>water</code>, <code>food</code>, <code>summit</code>,
+          <code>valley</code>, and <code>sprint</code> with dedicated icons; other documented types are shown as a <code>generic</code>
+          marker.
+        </p>
+        <hr class="sep">
+        <div class="donate">
+          <p>If this tool helps you, consider supporting it:</p>
+          <a class="donate-btn" href="https://www.paypal.com/donate/?hosted_button_id=MJF3AHPSQGFLS" target="_blank"
+             rel="noopener noreferrer">
+            <img alt="Donate via PayPal" src="https://img.shields.io/badge/Donate-PayPal-blue.svg">
+          </a>
+        </div>
+      </section>
+    </aside>
     <!-- Map -->
     <div class="map-wrap" aria-label="Map">
       <div id="map"></div>

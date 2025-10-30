@@ -67,20 +67,43 @@ export function renderTrackAndWaypoints(gj) {
       return L.marker(latlng, { icon: fallbackDivIcon("W", true) });
     },
     onEachFeature: (f, layer) => {
+      // Use original GPX props; compute a friendly fallback name if needed
       const p = f?.properties || {};
       const wahooId = (p.type || p.sym || "generic").toString().trim().toLowerCase();
-      const { nameLabel } = buildExportFields(p, wahooId, null);
+
+      const { nameLabel: fallbackName } = buildExportFields(p, wahooId, null);
+      const titleName = (p.name && String(p.name).trim()) || fallbackName;
+      const descText  = (p.desc != null) ? String(p.desc) : "";
+
+      // GPX snippet that preserves the original <desc> and sym/type
+      const latlng = layer.getLatLng();
+      let gpxBlock = "";
+      if (latlng && Number.isFinite(latlng.lat) && Number.isFinite(latlng.lng)) {
+        const symText = (p.type || p.sym || wahooId).toString().trim().toLowerCase();
+        const gpx = buildGpxSnippet(latlng.lat, latlng.lng, titleName, descText, symText);
+        gpxBlock = `
+          <div class="subhead">GPX</div>
+          <pre class="code">${esc(gpx)}</pre>
+        `;
+      }
 
       const rows = [];
-      if (p.desc) rows.push(row("Description", p.desc));
-      if (p.cmt)  rows.push(row("Comment", p.cmt));
-      if (p.type) rows.push(row("Type", p.type));
-      if (p.sym)  rows.push(row("Symbol", p.sym));
+      if (descText) rows.push(row("Description", descText));
+      if (p.cmt)    rows.push(row("Comment", String(p.cmt)));
+      if (p.type)   rows.push(row("Type", String(p.type)));
+      if (p.sym)    rows.push(row("Symbol", String(p.sym)));
 
-      layer.bindPopup(`<div class="popup"><div class="title">${maybeIconImgFromSym(wahooId)}<span>${esc(nameLabel)}</span></div>${rows.join("") || "<div class='kv'><em>No extra info</em></div>"}</div>`);
+      layer.bindPopup(
+        `<div class="popup">
+          <div class="title">${maybeIconImgFromSym(wahooId)}<span>${esc(titleName)}</span></div>
+          ${rows.join("") || "<div class='kv'><em>No extra info</em></div>"}
+          ${gpxBlock}
+        </div>`
+      );
     }
   }).addTo(map);
 }
+
 
 export function getRouteLine() {
   if (!trackLayer) return null;

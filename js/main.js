@@ -19,6 +19,57 @@ import {
 } from "./overpass.js";
 import { addPoisAsWaypointsToGpx, stripWaypointsFromGpx } from "./gpx.js";
 
+/* ---------- CDN fallbacks for IABs that block unpkg ---------- */
+const CDN_FALLBACKS = {
+  leaflet_js:  "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js",
+  leaflet_css: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css",
+  togeojson:   "https://cdn.jsdelivr.net/npm/@tmcw/togeojson",
+  turf:        "https://cdn.jsdelivr.net/npm/@turf/turf@6.5.0/turf.min.js",
+};
+
+function loadScriptOnce(src) {
+  return new Promise((resolve, reject) => {
+    if ([...document.scripts].some(s => s.src === src)) return resolve();
+    const el = document.createElement("script");
+    el.src = src;
+    el.async = true;
+    el.onload = () => resolve();
+    el.onerror = () => reject(new Error(`Failed loading ${src}`));
+    document.head.appendChild(el);
+  });
+}
+function loadCssOnce(href) {
+  if ([...document.styleSheets].some(ss => ss.href === href)) return;
+  const el = document.createElement("link");
+  el.rel = "stylesheet";
+  el.href = href;
+  document.head.appendChild(el);
+}
+async function ensureLibsLoaded() {
+  // If any are missing, try fallbacks.
+  const needLeaflet   = !window.L;
+  const needTgj       = !window.toGeoJSON;
+  const needTurf      = !window.turf;
+
+  if (needLeaflet) {
+    loadCssOnce(CDN_FALLBACKS.leaflet_css);
+    try { await loadScriptOnce(CDN_FALLBACKS.leaflet_js); } catch {}
+  }
+  if (!window.L) return { ok:false, reason:"Leaflet failed to load" };
+
+  if (needTgj) {
+    try { await loadScriptOnce(CDN_FALLBACKS.togeojson); } catch {}
+  }
+  if (!window.toGeoJSON) return { ok:false, reason:"toGeoJSON failed to load" };
+
+  if (needTurf) {
+    try { await loadScriptOnce(CDN_FALLBACKS.turf); } catch {}
+  }
+  if (!window.turf) return { ok:false, reason:"Turf.js failed to load" };
+
+  return { ok:true };
+}
+
 /* ---------- Config state ---------- */
 let WAHOO = { version: 1, categories: [] };
 let OVERPASS = { version: 1, items: [] };
@@ -62,22 +113,30 @@ function applyInitialPanelState() {
 }
 
 /* ---------- Errors ---------- */
-window.addEventListener("error", (e) =>
-  showBootError(e.error?.stack || e.message || String(e))
-);
-window.addEventListener("unhandledrejection", (e) =>
-  showBootError(e.reason?.stack || e.reason?.message || String(e))
-);
+let _bootErrorShown = false;
+window.addEventListener("error", (e) => {
+  // In many IABs, cross-origin errors are just "Script error."
+  const msg = e?.message || "Unknown error";
+  if (_bootErrorShown) return;
+  showBootError(msg);
+});
+window.addEventListener("unhandledrejection", (e) => {
+  const msg = e?.reason?.message || e?.reason || "Unhandled rejection";
+  if (_bootErrorShown) return;
+  showBootError(String(msg));
+});
 
-/* ---------- Startup (robust to late import) ---------- */
+/* ---------- Startup (robust, with CDN fallbacks) ---------- */
 let __started = false;
 async function startApp() {
   if (__started) return;
   __started = true;
   try {
-    if (!window.L) throw new Error("Leaflet not loaded");
-    if (!window.toGeoJSON) throw new Error("toGeoJSON not loaded");
-    if (!window.turf) throw new Error("Turf not loaded");
+    const libs = await ensureLibsLoaded();
+    if (!libs.ok) {
+      showBootError(`${libs.reason}. In-app browsers sometimes block CDNs. Open in your browser or try again.`);
+      return;
+    }
 
     initMap();
     hookMapClicksForPlacement();
@@ -85,11 +144,11 @@ async function startApp() {
     await loadConfigsSafe();
     indexConfigs();
 
-    // expose lookup so mapview can render waypoint icons for imported GPX
+    // Expose lookup so mapview can render waypoint icons for imported GPX.
     window.getWahooIconUrl = (id) => {
       const key = String(id || "").trim().toLowerCase();
       const known = WAHOO_ITEM_BY_ID.get(key)?.icon || null;
-      // If not in wahoo.json (or empty sym/type), use a generic round fallback.
+      // Fallback if unknown: generic round icon
       return known || "icons/undefined.svg";
     };
 
@@ -599,44 +658,46 @@ function toFeatures(overpassJson, selectedItems) {
 
   els.forEach(el => {
     const tags = el.tags || {};
-    const id = `${el.type}/${el.id}`;
+    theId: {
+      const id = `${el.type}/${el.id}`;
 
-    const lon = (el.lon != null) ? el.lon : (el.center?.lon);
-    const lat = (el.lat != null) ? el.lat : (el.center?.lat);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+      const lon = (el.lon != null) ? el.lon : (el.center?.lon);
+      const lat = (el.lat != null) ? el.lat : (el.center?.lat);
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) break theId;
 
-    // Pick the FIRST matching rule from config; else generic.
-    let wType = "generic";
-    for (const r of rules) {
-      if (r.defs.some(d => tags[d.k] === d.v)) { wType = r.wahoo; break; }
-    }
-
-    const icon = iconForType(wType);
-
-    // snap + distance (meters) to current route
-    let snap = null, distM = null;
-    if (line) {
-      try {
-        const pt = turf.point([lon, lat]);
-        const snapped = turf.nearestPointOnLine(line, pt, { units: "meters" });
-        snap  = [snapped.geometry.coordinates[0], snapped.geometry.coordinates[1]];
-        distM = Math.round(turf.distance(pt, snapped, { units: "meters" }));
-      } catch {}
-    }
-
-    const f = {
-      type: "Feature",
-      id,
-      geometry: { type: "Point", coordinates: [lon, lat] },
-      properties: {
-        ...tags,
-        _type: wType,
-        _iconUrl: icon || undefined,
-        _distance_m: distM ?? undefined,
-        _snap: snap ?? undefined
+      // Pick the FIRST matching rule from config; else generic.
+      let wType = "generic";
+      for (const r of rules) {
+        if (r.defs.some(d => tags[d.k] === d.v)) { wType = r.wahoo; break; }
       }
-    };
-    byId.set(id, f);
+
+      const icon = iconForType(wType);
+
+      // snap + distance (meters) to current route
+      let snap = null, distM = null;
+      if (line) {
+        try {
+          const pt = turf.point([lon, lat]);
+          const snapped = turf.nearestPointOnLine(line, pt, { units: "meters" });
+          snap  = [snapped.geometry.coordinates[0], snapped.geometry.coordinates[1]];
+          distM = Math.round(turf.distance(pt, snapped, { units: "meters" }));
+        } catch {}
+      }
+
+      const f = {
+        type: "Feature",
+        id,
+        geometry: { type: "Point", coordinates: [lon, lat] },
+        properties: {
+          ...tags,
+          _type: wType,
+          _iconUrl: icon || undefined,
+          _distance_m: distM ?? undefined,
+          _snap: snap ?? undefined
+        }
+      };
+      byId.set(id, f);
+    }
   });
 
   return Array.from(byId.values());
@@ -749,7 +810,12 @@ function updateCountsStatus() { renderPoiStatus(); }
 function setTopStatus(m) { const el = $("#status"); if (el) el.textContent = m || ""; }
 function setPoiStatus(m) { POI_UI_MSG = m || ""; renderPoiStatus(); }
 function showBootError(msg) {
+  _bootErrorShown = true;
   const box = $("#boot-error"); if (!box) return;
-  box.textContent = `Startup error: ${msg}`;
+  // Normalize the opaque “Script error.” message
+  const nice = (String(msg).trim() === "Script error.")
+    ? "A required library failed to load (blocked by in-app browser). Trying fallbacks… If it still doesn’t load, open this page in your default browser."
+    : String(msg);
+  box.textContent = `Startup error: ${nice}`;
   box.style.display = "block";
 }

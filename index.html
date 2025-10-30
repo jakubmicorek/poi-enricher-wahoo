@@ -11,6 +11,42 @@
 
   <!-- App styles -->
   <link rel="stylesheet" href="./style.css"/>
+
+  <!-- Early, global error catcher (CSP-safe, no eval) -->
+  <script>
+    (function () {
+      function showBoot(msg) {
+        function reveal() {
+          var box = document.getElementById('boot-error');
+          if (!box) {
+            if (!document.body) { setTimeout(reveal, 0); return; }
+            box = document.createElement('div');
+            box.id = 'boot-error';
+            box.className = 'boot-error';
+            document.body.prepend(box);
+          }
+          box.textContent = 'Startup error: ' + msg;
+          box.style.display = 'block';
+        }
+        reveal();
+      }
+      window.__showBoot = showBoot;
+
+      // Catch resource load failures and JS exceptions (including module parse errors)
+      window.addEventListener('error', function (ev) {
+        var t = ev.target;
+        if (t && t !== window && (t.src || t.href)) {
+          showBoot('Failed to load ' + (t.src || t.href));
+          return;
+        }
+        var loc = ev.filename ? (' @ ' + ev.filename + ':' + ev.lineno + ':' + ev.colno) : '';
+        showBoot((ev.message || 'Script error') + loc);
+      }, true);
+      window.addEventListener('unhandledrejection', function (ev) {
+        showBoot((ev.reason && (ev.reason.stack || ev.reason.message)) || String(ev.reason || 'Promise rejected'));
+      });
+    })();
+  </script>
 </head>
 <body>
   <div id="boot-error" class="boot-error" style="display:none"></div>
@@ -53,7 +89,6 @@
         <p id="status" class="status-in-box hint"></p>
       </section>
 
-
       <section class="panel" aria-labelledby="corridor-title">
         <h2 id="corridor-title">Corridor &amp; Export</h2>
         <div class="poi-controls" style="margin:0 0 8px">
@@ -72,7 +107,6 @@
           </a>
         </div>
       </section>
-
 
       <section class="panel" aria-labelledby="about-title">
         <h2 id="about-title">About</h2>
@@ -95,6 +129,7 @@
         </div>
       </section>
     </aside>
+
     <!-- Map -->
     <div class="map-wrap" aria-label="Map">
       <div id="map"></div>
@@ -154,13 +189,26 @@
     </div>
   </div>
 
-  <!-- Libraries -->
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://unpkg.com/@tmcw/togeojson"></script>
-  <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js"></script>
+  <!-- Libraries (classic scripts; crossorigin for useful error messages) -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@tmcw/togeojson" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js" crossorigin="anonymous"></script>
 
-  <!-- App -->
-  <script type="module" src="./js/main.js"></script>
+  <!-- Loader: show a friendly message on browsers without ES modules -->
+  <script nomodule>
+    (window.__showBoot || function (m) { alert(m); })(
+      'This in-app browser is too old to run the mapper. Open in your system browser (Chrome/Safari/Firefox).'
+    );
+  </script>
+
+  <!-- App loader (inline, CSP-safe). If import fails, report the error. -->
+  <script type="module">
+    import('./js/main.js')
+      .catch(err => {
+        const msg = (err && (err.stack || err.message)) || String(err);
+        (window.__showBoot || (m => console.error(m)))('Startup error: ' + msg);
+      });
+  </script>
 
   <!-- Concise Footer -->
   <footer class="site-footer" role="contentinfo" aria-label="Credits">

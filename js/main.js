@@ -41,6 +41,9 @@ let LAST_INSIDE_SELECTED = [];
 let CORRIDOR_POLY = null;
 let SHOW_DISTANCE_LINES = true;
 
+/* ---------- Live status text (message + counts) ---------- */
+let POI_UI_MSG = "";
+
 /* ---------- Responsive ---------- */
 function isMobile() {
   try {
@@ -66,8 +69,11 @@ window.addEventListener("unhandledrejection", (e) =>
   showBootError(e.reason?.stack || e.reason?.message || String(e))
 );
 
-/* ---------- Startup ---------- */
-window.addEventListener("DOMContentLoaded", async () => {
+/* ---------- Startup (robust to late import) ---------- */
+let __started = false;
+async function startApp() {
+  if (__started) return;
+  __started = true;
   try {
     if (!window.L) throw new Error("Leaflet not loaded");
     if (!window.toGeoJSON) throw new Error("toGeoJSON not loaded");
@@ -80,14 +86,12 @@ window.addEventListener("DOMContentLoaded", async () => {
     indexConfigs();
 
     // expose lookup so mapview can render waypoint icons for imported GPX
-    // expose lookup so mapview can render waypoint icons for imported GPX
     window.getWahooIconUrl = (id) => {
       const key = String(id || "").trim().toLowerCase();
       const known = WAHOO_ITEM_BY_ID.get(key)?.icon || null;
       // If not in wahoo.json (or empty sym/type), use a generic round fallback.
       return known || "icons/undefined.svg";
     };
-
 
     buildPoiPanel();
     buildAddPoiModalOptions();
@@ -101,10 +105,18 @@ window.addEventListener("DOMContentLoaded", async () => {
     drawSearchBoxAndCorridor();
     setPoiStatus("Choose POIs and fetch.");
     updateExportUi();
+    updateCountsStatus();
   } catch (err) {
     showBootError(err?.stack || err?.message || String(err));
   }
-});
+}
+
+// Run immediately if DOM is already parsed, otherwise wait once.
+if (document.readyState === "loading") {
+  window.addEventListener("DOMContentLoaded", startApp, { once: true });
+} else {
+  startApp();
+}
 
 /* ---------- Config load/index ---------- */
 async function loadConfigsSafe() {
@@ -222,6 +234,7 @@ function onPoiSelectionChanged() {
   renderSelectedChips();
   updatePoiLayers();
   updateExportUi();
+  updateCountsStatus();
 }
 
 /* ---------- Selected chips ---------- */
@@ -311,6 +324,7 @@ function hookMapClicksForPlacement() {
 
     // reflect in export button immediately
     updateExportUi();
+    updateCountsStatus();
 
     document.body.classList.remove("add-poi-armed");
     pendingPoiTypeId = null;
@@ -331,6 +345,7 @@ function hookUi() {
     recomputeInsideFlagsForAllFetched();
     updatePoiLayers();
     updateExportUi();
+    updateCountsStatus();
   }, 120);
   $("#poi-range-m")?.addEventListener("input", onCorridor);
   $("#poi-range-m")?.addEventListener("change", onCorridor);
@@ -386,7 +401,10 @@ function hookUi() {
   });
 
   // Keep export button in sync when custom POIs are added/removed
-  window.addEventListener("custom-pois-changed", updateExportUi);
+  window.addEventListener("custom-pois-changed", () => {
+    updateExportUi();
+    updateCountsStatus();
+  });
 }
 
 function openAddPoiModal() {
@@ -417,6 +435,7 @@ async function onFile(e) {
     recomputeInsideFlagsForAllFetched();
     setPoiStatus("GPX loaded.");
     updateExportUi();
+    updateCountsStatus();
   } catch (err) {
     setPoiStatus(`Loading GPX failed: ${err?.message || err}`);
   }
@@ -442,6 +461,7 @@ async function onDrop(e) {
     recomputeInsideFlagsForAllFetched();
     setPoiStatus("GPX loaded.");
     updateExportUi();
+    updateCountsStatus();
   } catch (err) {
     setPoiStatus(`Dropping GPX failed: ${err?.message || err}`);
   }
@@ -554,6 +574,7 @@ async function fetchAndRender(bbox, items) {
     rememberFetchedPois(features);
     setPoiStatus(`Fetched ${features.length} POIs.`);
     updateExportUi();
+    updateCountsStatus();
   } catch (e) {
     setPoiStatus(`Fetch failed: ${e?.message || e}`);
   }
@@ -701,9 +722,32 @@ function updateExportUi() {
   btn.setAttribute("href", url);
 }
 
+/* ---------- Counts + status composer ---------- */
+function computeCounts() {
+  const totalFetched = ALL_FETCHED_POIS.length;
+  const inCorridor = ALL_FETCHED_POIS.reduce((n, f) => n + (f?.properties?._inside ? 1 : 0), 0);
+  const selectedInCorridor = LAST_INSIDE_SELECTED.length;
+  const customCount = listCustomPois().length;
+  const exportTotal = selectedInCorridor + customCount;
+  return { totalFetched, inCorridor, selectedInCorridor, customCount, exportTotal };
+}
+function countsText() {
+  const { totalFetched, inCorridor, selectedInCorridor, customCount, exportTotal } = computeCounts();
+  return `fetched: ${totalFetched} | in corridor: ${inCorridor} | selected in corridor: ${selectedInCorridor} | custom: ${customCount} | export: ${exportTotal}`;
+}
+function renderPoiStatus() {
+  const el = $("#poi-status");
+  if (!el) return;
+  const parts = [];
+  if (POI_UI_MSG) parts.push(POI_UI_MSG);
+  parts.push(countsText());
+  el.textContent = parts.join(" | ");
+}
+function updateCountsStatus() { renderPoiStatus(); }
+
 /* ---------- Helpers ---------- */
 function setTopStatus(m) { const el = $("#status"); if (el) el.textContent = m || ""; }
-function setPoiStatus(m) { const el = $("#poi-status"); if (el) el.textContent = m || ""; }
+function setPoiStatus(m) { POI_UI_MSG = m || ""; renderPoiStatus(); }
 function showBootError(msg) {
   const box = $("#boot-error"); if (!box) return;
   box.textContent = `Startup error: ${msg}`;

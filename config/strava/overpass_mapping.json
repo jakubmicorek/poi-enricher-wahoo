@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "map": {
+    "drinking_water": "Water Source",
+    "cafe": "Coffee",
+    "restaurant": "Restaurant",
+    "fast_food": "Restaurant",
+    "bakery": "Restaurant",
+    "bar": "Bars",
+    "pub": "Bars",
+    "supermarket": "Grocery",
+    "convenience": "Grocery",
+    "pharmacy": "Pharmacy",
+    "first_aid": "Aid Station",
+    "lodging": "Lodging",
+    "toilets": "Restroom",
+    "bicycle_shop": "Bike Shop",
+    "bicycle_repair": "Bike Shop",
+    "parking": "Parking",
+    "camp_site": "Camp site",
+    "park": "Park",
+    "rest_area": "Rest area",
+    "shelter": "Rest area",
+    "trailhead": "Trailhead",
+    "viewpoint": "Viewpoint",
+    "peak": "Peak",
+    "attraction": "Attraction",
+    "artwork": "Art",
+    "monument": "Monument"
+  }
+}

@@ -1,66 +1,522 @@
 {
   "version": 1,
   "items": [
-    { "id": "drinking_water", "label": "Drinking water", "wahoo_id": "water",       "defaultSelected": true,  "tags": [ { "k": "amenity", "v": "drinking_water" } ] },
-
-    { "id": "cafe",           "label": "Cafés",          "wahoo_id": "coffee",      "defaultSelected": false, "tags": [ { "k": "amenity", "v": "cafe" } ] },
-    { "id": "restaurant",     "label": "Restaurants",    "wahoo_id": "food",        "defaultSelected": false, "tags": [ { "k": "amenity", "v": "restaurant" } ] },
-    { "id": "fast_food",      "label": "Fast food",      "wahoo_id": "food",        "defaultSelected": false, "tags": [ { "k": "amenity", "v": "fast_food" } ] },
-    { "id": "bakery",         "label": "Bakeries",       "wahoo_id": "food",        "defaultSelected": false, "tags": [ { "k": "shop",    "v": "bakery" } ] },
-
-    { "id": "bar",            "label": "Bars",           "wahoo_id": "bar",         "defaultSelected": false, "tags": [ { "k": "amenity", "v": "bar" } ] },
-    { "id": "pub",            "label": "Pubs",           "wahoo_id": "bar",         "defaultSelected": false, "tags": [ { "k": "amenity", "v": "pub" } ] },
-
-    { "id": "supermarket",    "label": "Supermarkets",   "wahoo_id": "groceries",   "defaultSelected": false, "tags": [ { "k": "shop", "v": "supermarket" } ] },
-    { "id": "convenience",    "label": "Convenience",    "wahoo_id": "groceries",   "defaultSelected": false, "tags": [ { "k": "shop", "v": "convenience" } ] },
-
-    { "id": "fuel",           "label": "Fuel",           "wahoo_id": "gas_station", "defaultSelected": true,  "tags": [ { "k": "amenity", "v": "fuel" } ] },
-
-    { "id": "pharmacy",       "label": "Pharmacies",     "wahoo_id": "pharmacy",    "defaultSelected": false, "tags": [ { "k": "amenity", "v": "pharmacy" } ] },
-    { "id": "hospital",       "label": "Hospitals",      "wahoo_id": "hospital",    "defaultSelected": false, "tags": [ { "k": "amenity", "v": "hospital" } ] },
-    { "id": "first_aid",      "label": "First Aid",      "wahoo_id": "first_aid",   "defaultSelected": false, "tags": [ { "k": "amenity", "v": "first_aid" } ] },
-
-    { "id": "library",        "label": "Libraries",      "wahoo_id": "library",     "defaultSelected": false, "tags": [ { "k": "amenity", "v": "library" } ] },
-    { "id": "information",    "label": "Tourist info",   "wahoo_id": "info",        "defaultSelected": false, "tags": [ { "k": "tourism", "v": "information" } ] },
-    { "id": "internet_cafe",  "label": "Internet cafés", "wahoo_id": "internet",    "defaultSelected": false, "tags": [ { "k": "amenity", "v": "internet_cafe" } ] },
-    { "id": "lodging",        "label": "Hotels & lodging","wahoo_id": "lodging",    "defaultSelected": false, "tags": [ { "k": "tourism", "v": "hotel" }, { "k": "tourism", "v": "hostel" }, { "k": "tourism", "v": "guest_house" }, { "k": "tourism", "v": "alpine_hut" } ] },
-    { "id": "shower",         "label": "Showers",        "wahoo_id": "shower",      "defaultSelected": false, "tags": [ { "k": "amenity", "v": "shower" } ] },
-    { "id": "toilets",        "label": "Toilets",        "wahoo_id": "toilet",      "defaultSelected": true,  "tags": [ { "k": "amenity", "v": "toilets" } ] },
-
-    { "id": "atm",            "label": "ATMs",           "wahoo_id": "atm",         "defaultSelected": false, "tags": [ { "k": "amenity", "v": "atm" } ] },
-
-    { "id": "bicycle_shop",   "label": "Bike shops",     "wahoo_id": "bike_shop",   "defaultSelected": false, "tags": [ { "k": "shop", "v": "bicycle" } ] },
-    { "id": "bicycle_repair", "label": "Repair stations","wahoo_id": "bike_shop",   "defaultSelected": false, "tags": [ { "k": "amenity", "v": "bicycle_repair_station" } ] },
-
-    { "id": "bicycle_parking","label": "Bike parking",   "wahoo_id": "bike_parking","defaultSelected": false, "tags": [ { "k": "amenity", "v": "bicycle_parking" } ] },
-    { "id": "bicycle_rental", "label": "Bike share",     "wahoo_id": "bike_share",  "defaultSelected": false, "tags": [ { "k": "amenity", "v": "bicycle_rental" } ] },
-
-    { "id": "chair_lift",     "label": "Chairlifts",     "wahoo_id": "chairlift",   "defaultSelected": false, "tags": [ { "k": "aerialway", "v": "chair_lift" } ] },
-    { "id": "charging_station","label": "E-bike charging","wahoo_id": "e_bike_charging","defaultSelected": false, "tags": [ { "k": "amenity", "v": "charging_station" } ] },
-
-    { "id": "ferry_terminal", "label": "Ferry terminals","wahoo_id": "ferry",       "defaultSelected": false, "tags": [ { "k": "amenity", "v": "ferry_terminal" } ] },
-    { "id": "parking",        "label": "Parking",        "wahoo_id": "parking",     "defaultSelected": false, "tags": [ { "k": "amenity", "v": "parking" } ] },
-    { "id": "bus_station",    "label": "Bus stations",   "wahoo_id": "transit",     "defaultSelected": false, "tags": [ { "k": "amenity", "v": "bus_station" } ] },
-    { "id": "railway_station","label": "Railway stations","wahoo_id": "transit",    "defaultSelected": false, "tags": [ { "k": "railway", "v": "station" } ] },
-    { "id": "pt_station",     "label": "Public transport stations", "wahoo_id": "transit", "defaultSelected": false, "tags": [ { "k": "public_transport", "v": "station" } ] },
-
-    { "id": "camp_site",      "label": "Campsites",      "wahoo_id": "campsite",    "defaultSelected": false, "tags": [ { "k": "tourism", "v": "camp_site" } ] },
-    { "id": "park",           "label": "Parks",          "wahoo_id": "park",        "defaultSelected": false, "tags": [ { "k": "leisure", "v": "park" } ] },
-    { "id": "rest_area",      "label": "Rest areas",     "wahoo_id": "rest_area",   "defaultSelected": false, "tags": [ { "k": "highway", "v": "rest_area" } ] },
-    { "id": "shelter",        "label": "Shelters",       "wahoo_id": "rest_area",   "defaultSelected": true, "tags": [ { "k": "amenity", "v": "shelter" } ] },
-    { "id": "trailhead",      "label": "Trailheads",     "wahoo_id": "trailhead",   "defaultSelected": false, "tags": [ { "k": "tourism", "v": "trailhead" } ] },
-    { "id": "viewpoint",      "label": "Viewpoints",     "wahoo_id": "viewpoint",   "defaultSelected": false, "tags": [ { "k": "tourism", "v": "viewpoint" } ] },
-    { "id": "peak",           "label": "Summits",        "wahoo_id": "summit",      "defaultSelected": false, "tags": [ { "k": "natural", "v": "peak" } ] },
-    { "id": "valley",         "label": "Valleys",        "wahoo_id": "valley",      "defaultSelected": false, "tags": [ { "k": "natural", "v": "valley" } ] },
-    { "id": "dog_park",       "label": "Dog parks",      "wahoo_id": "dog_park",    "defaultSelected": false, "tags": [ { "k": "leisure", "v": "dog_park" } ] },
-
-    { "id": "attraction",     "label": "Attractions",    "wahoo_id": "attraction",  "defaultSelected": false, "tags": [ { "k": "tourism", "v": "attraction" } ] },
-    { "id": "artwork",        "label": "Artwork",        "wahoo_id": "art",         "defaultSelected": false, "tags": [ { "k": "tourism", "v": "artwork" } ] },
-    { "id": "monument",       "label": "Monuments",      "wahoo_id": "monument",    "defaultSelected": false, "tags": [ { "k": "historic", "v": "monument" } ] },
-    { "id": "wine_shop",      "label": "Wine shops",     "wahoo_id": "winery",      "defaultSelected": false, "tags": [ { "k": "shop", "v": "wine" } ] },
-    { "id": "winery_craft",   "label": "Wineries (craft)","wahoo_id": "winery",     "defaultSelected": false, "tags": [ { "k": "craft", "v": "winery" } ] },
-
-    { "id": "shopping_mall",  "label": "Shopping malls", "wahoo_id": "shopping",    "defaultSelected": false, "tags": [ { "k": "shop", "v": "mall" } ] },
-    { "id": "department_store","label": "Department stores", "wahoo_id": "shopping", "defaultSelected": false, "tags": [ { "k": "shop", "v": "department_store" } ] }
+    {
+      "id": "drinking_water",
+      "label": "Drinking water",
+      "defaultSelected": true,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "drinking_water"
+        }
+      ]
+    },
+    {
+      "id": "cafe",
+      "label": "Caf\u00e9s",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "cafe"
+        }
+      ]
+    },
+    {
+      "id": "restaurant",
+      "label": "Restaurants",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "restaurant"
+        }
+      ]
+    },
+    {
+      "id": "fast_food",
+      "label": "Fast food",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "fast_food"
+        }
+      ]
+    },
+    {
+      "id": "bakery",
+      "label": "Bakeries",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "shop",
+          "v": "bakery"
+        }
+      ]
+    },
+    {
+      "id": "bar",
+      "label": "Bars",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "bar"
+        }
+      ]
+    },
+    {
+      "id": "pub",
+      "label": "Pubs",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "pub"
+        }
+      ]
+    },
+    {
+      "id": "supermarket",
+      "label": "Supermarkets",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "shop",
+          "v": "supermarket"
+        }
+      ]
+    },
+    {
+      "id": "convenience",
+      "label": "Convenience",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "shop",
+          "v": "convenience"
+        }
+      ]
+    },
+    {
+      "id": "fuel",
+      "label": "Fuel",
+      "defaultSelected": true,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "fuel"
+        }
+      ]
+    },
+    {
+      "id": "pharmacy",
+      "label": "Pharmacies",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "pharmacy"
+        }
+      ]
+    },
+    {
+      "id": "hospital",
+      "label": "Hospitals",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "hospital"
+        }
+      ]
+    },
+    {
+      "id": "first_aid",
+      "label": "First Aid",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "first_aid"
+        }
+      ]
+    },
+    {
+      "id": "library",
+      "label": "Libraries",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "library"
+        }
+      ]
+    },
+    {
+      "id": "information",
+      "label": "Tourist info",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "tourism",
+          "v": "information"
+        }
+      ]
+    },
+    {
+      "id": "internet_cafe",
+      "label": "Internet caf\u00e9s",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "internet_cafe"
+        }
+      ]
+    },
+    {
+      "id": "lodging",
+      "label": "Hotels & lodging",
+      "defaultSelected": false,
+      "tagsAll": [
+        {
+          "k": "tourism",
+          "v": "hotel"
+        }
+      ]
+    },
+    {
+      "id": "shower",
+      "label": "Showers",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "shower"
+        }
+      ]
+    },
+    {
+      "id": "toilets",
+      "label": "Toilets",
+      "defaultSelected": true,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "toilets"
+        }
+      ]
+    },
+    {
+      "id": "atm",
+      "label": "ATMs",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "atm"
+        }
+      ]
+    },
+    {
+      "id": "bicycle_shop",
+      "label": "Bike shops",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "shop",
+          "v": "bicycle"
+        }
+      ]
+    },
+    {
+      "id": "bicycle_repair",
+      "label": "Repair stations",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "bicycle_repair_station"
+        }
+      ]
+    },
+    {
+      "id": "bicycle_parking",
+      "label": "Bike parking",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "bicycle_parking"
+        }
+      ]
+    },
+    {
+      "id": "bicycle_rental",
+      "label": "Bike share",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "bicycle_rental"
+        }
+      ]
+    },
+    {
+      "id": "chair_lift",
+      "label": "Chairlifts",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "aerialway",
+          "v": "chair_lift"
+        }
+      ]
+    },
+    {
+      "id": "charging_station",
+      "label": "E-bike charging",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "charging_station"
+        }
+      ]
+    },
+    {
+      "id": "ferry_terminal",
+      "label": "Ferry terminals",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "ferry_terminal"
+        }
+      ]
+    },
+    {
+      "id": "parking",
+      "label": "Parking",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "parking"
+        }
+      ]
+    },
+    {
+      "id": "bus_station",
+      "label": "Bus stations",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "bus_station"
+        }
+      ]
+    },
+    {
+      "id": "railway_station",
+      "label": "Railway stations",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "railway",
+          "v": "station"
+        }
+      ]
+    },
+    {
+      "id": "pt_station",
+      "label": "Public transport stations",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "public_transport",
+          "v": "station"
+        }
+      ]
+    },
+    {
+      "id": "camp_site",
+      "label": "Campsites",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "tourism",
+          "v": "camp_site"
+        }
+      ]
+    },
+    {
+      "id": "park",
+      "label": "Parks",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "leisure",
+          "v": "park"
+        }
+      ]
+    },
+    {
+      "id": "rest_area",
+      "label": "Rest areas",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "highway",
+          "v": "rest_area"
+        }
+      ]
+    },
+    {
+      "id": "shelter",
+      "label": "Shelters",
+      "defaultSelected": true,
+      "tags": [
+        {
+          "k": "amenity",
+          "v": "shelter"
+        }
+      ]
+    },
+    {
+      "id": "trailhead",
+      "label": "Trailheads",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "tourism",
+          "v": "trailhead"
+        }
+      ]
+    },
+    {
+      "id": "viewpoint",
+      "label": "Viewpoints",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "tourism",
+          "v": "viewpoint"
+        }
+      ]
+    },
+    {
+      "id": "peak",
+      "label": "Summits",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "natural",
+          "v": "peak"
+        }
+      ]
+    },
+    {
+      "id": "valley",
+      "label": "Valleys",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "natural",
+          "v": "valley"
+        }
+      ]
+    },
+    {
+      "id": "dog_park",
+      "label": "Dog parks",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "leisure",
+          "v": "dog_park"
+        }
+      ]
+    },
+    {
+      "id": "attraction",
+      "label": "Attractions",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "tourism",
+          "v": "attraction"
+        }
+      ]
+    },
+    {
+      "id": "artwork",
+      "label": "Artwork",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "tourism",
+          "v": "artwork"
+        }
+      ]
+    },
+    {
+      "id": "monument",
+      "label": "Monuments",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "historic",
+          "v": "monument"
+        }
+      ]
+    },
+    {
+      "id": "wine_shop",
+      "label": "Wine shops",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "shop",
+          "v": "wine"
+        }
+      ]
+    },
+    {
+      "id": "winery_craft",
+      "label": "Wineries (craft)",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "craft",
+          "v": "winery"
+        }
+      ]
+    },
+    {
+      "id": "shopping_mall",
+      "label": "Shopping malls",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "shop",
+          "v": "mall"
+        }
+      ]
+    },
+    {
+      "id": "department_store",
+      "label": "Department stores",
+      "defaultSelected": false,
+      "tags": [
+        {
+          "k": "shop",
+          "v": "department_store"
+        }
+      ]
+    }
   ]
 }

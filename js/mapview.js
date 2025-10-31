@@ -1,15 +1,13 @@
-// js/mapview.js
 import { esc, row } from "./util.js";
 import { buildExportFields } from "./mapping.js";
 
-// Map + layers
 let map = null;
 let trackLayer = null, waypointLayer = null;
 let allPoisLayer = null, poisLayer = null, distanceLayer = null;
-let searchBoxLayer = null, corridorLayer = null;
+let corridorLayer = null;
+let searchPolyLayer = null;
 let customPoisLayer = null;
 
-// Track custom POIs for export
 let _customId = 0;
 let _customPois = []; // { id, lat, lon, type, label, desc, iconUrl, marker }
 
@@ -24,7 +22,7 @@ export function initMap() {
   }).addTo(map);
 
   distanceLayer   = L.featureGroup().addTo(map);
-  searchBoxLayer  = L.featureGroup().addTo(map);
+  searchPolyLayer = L.featureGroup().addTo(map);
   corridorLayer   = L.featureGroup().addTo(map);
   customPoisLayer = L.featureGroup().addTo(map);
 
@@ -35,7 +33,7 @@ export function getMap(){ return map; }
 
 export function renderTrackAndWaypoints(gj) {
   const features = Array.isArray(gj?.features) ? gj.features : [];
-  const track = features.find(f => f?.geometry?.type === "LineString");
+  const track = features.find(f => f?.geometry?.type === "LineString" || f?.geometry?.type === "MultiLineString");
   if (!track) { return; }
 
   if (trackLayer) trackLayer.remove();
@@ -67,7 +65,6 @@ export function renderTrackAndWaypoints(gj) {
       return L.marker(latlng, { icon: fallbackDivIcon("W", true) });
     },
     onEachFeature: (f, layer) => {
-      // Use original GPX props; compute a friendly fallback name if needed
       const p = f?.properties || {};
       const wahooId = (p.type || p.sym || "generic").toString().trim().toLowerCase();
 
@@ -75,16 +72,12 @@ export function renderTrackAndWaypoints(gj) {
       const titleName = (p.name && String(p.name).trim()) || fallbackName;
       const descText  = (p.desc != null) ? String(p.desc) : "";
 
-      // GPX snippet that preserves the original <desc> and sym/type
       const latlng = layer.getLatLng();
       let gpxBlock = "";
       if (latlng && Number.isFinite(latlng.lat) && Number.isFinite(latlng.lng)) {
         const symText = (p.type || p.sym || wahooId).toString().trim().toLowerCase();
         const gpx = buildGpxSnippet(latlng.lat, latlng.lng, titleName, descText, symText);
-        gpxBlock = `
-          <div class="subhead">GPX</div>
-          <pre class="code">${esc(gpx)}</pre>
-        `;
+        gpxBlock = `<div class="subhead">GPX</div><pre class="code">${esc(gpx)}</pre>`;
       }
 
       const rows = [];
@@ -93,49 +86,95 @@ export function renderTrackAndWaypoints(gj) {
       if (p.type)   rows.push(row("Type", String(p.type)));
       if (p.sym)    rows.push(row("Symbol", String(p.sym)));
 
-      layer.bindPopup(
-        `<div class="popup">
+      layer.bindPopup(`<div class="popup">
           <div class="title">${maybeIconImgFromSym(wahooId)}<span>${esc(titleName)}</span></div>
           ${rows.join("") || "<div class='kv'><em>No extra info</em></div>"}
           ${gpxBlock}
-        </div>`
-      );
+        </div>`);
     }
   }).addTo(map);
 }
 
+export function drawSearchPolygon(polyFeature) {
+  try { searchPolyLayer.clearLayers(); } catch {}
+
+  // 1) Draw the visible search polygon outline (unchanged behavior).
+  L.geoJSON(polyFeature, { style: { color: "#000000", weight: 1, fill: false, opacity: 0.7 }})
+    .addTo(searchPolyLayer);
+
+  // 2) Add an inverse “dimmer” polygon: a world rectangle with the search polygon as a hole.
+  //    This visually dims everything OUTSIDE the search polygon, while leaving the inside clear.
+  try {
+    const geom = polyFeature.type === "Feature" ? polyFeature.geometry : polyFeature;
+    if (geom?.type === "Polygon" || geom?.type === "MultiPolygon") {
+      // Build outer ring that covers the whole world (lon/lat order).
+      // Slightly inside world edges to satisfy ring validity across projections.
+      const WORLD = [
+        [-179.999, -85],  // lon, lat
+        [ 179.999, -85],
+        [ 179.999,  85],
+        [-179.999,  85],
+        [-179.999, -85]
+      ];
+
+      // Extract outer rings from the search polygon feature.
+      const holes = [];
+      if (geom.type === "Polygon" && Array.isArray(geom.coordinates?.[0])) {
+        holes.push(geom.coordinates[0]);
+      } else if (geom.type === "MultiPolygon" && Array.isArray(geom.coordinates?.[0]?.[0])) {
+        // For multi-polygons, use the first polygon's outer ring as the hole.
+        holes.push(geom.coordinates[0][0]);
+      }
+
+      if (holes.length) {
+        const inv = {
+          type: "Feature",
+          geometry: {
+            type: "Polygon",
+            // Even-odd fill: first ring = outer world rect, subsequent rings = holes (the visible search area)
+            coordinates: [WORLD, ...holes]
+          },
+          properties: {}
+        };
+
+        L.geoJSON(inv, {
+          interactive: false,
+          style: {
+            color: "#000000",
+            weight: 0,
+            fill: true,
+            fillOpacity: 0.2,   // <— outside dim strength
+            fillRule: "evenodd"  // important: carve a hole for the search polygon
+          }
+        }).addTo(searchPolyLayer);
+      }
+    }
+  } catch {}
+}
 
 export function getRouteLine() {
   if (!trackLayer) return null;
   const gj = trackLayer.toGeoJSON();
-  return (gj.type === "FeatureCollection")
-    ? (gj.features || []).find(f => f?.geometry?.type === "LineString")
-    : gj;
+  if (gj.type === "FeatureCollection") {
+    return (gj.features || []).find(f => f?.geometry?.type === "LineString" || f?.geometry?.type === "MultiLineString");
+  }
+  return gj;
 }
 
-export function drawSearchBox(bbox) {
-  searchBoxLayer.clearLayers();
-  const [minX, minY, maxX, maxY] = bbox;
-  const rect = L.rectangle([[minY, minX], [maxY, maxX]], {
-    color: "#0077ff", weight: 2, dashArray: "6 4", fill: false, opacity: 0.9
-  });
-  rect.addTo(searchBoxLayer);
-}
 export function drawCorridor(polyFeature) {
   corridorLayer.clearLayers();
-  L.geoJSON(polyFeature, { style: { color: "#ff006e", weight: 2, dashArray: "4 4", fill: false }})
+  L.geoJSON(polyFeature, { style: { color: "#ff006e", weight: 2, fill: false }})
     .addTo(corridorLayer);
 }
 
 export function renderAllPoisGhosted(features) {
   if (allPoisLayer) { allPoisLayer.remove(); }
-  allPoisLayer = L.geoJSON({type:"FeatureCollection",features}, {
-    pointToLayer: (f, latlng) => L.marker(latlng, {
-      icon: chooseIcon(f, true),
-      opacity: 0.35
-    }),
+  const onlyGhost = (features || []).filter(f => !f?.properties?._forced);
+  allPoisLayer = L.geoJSON({type:"FeatureCollection",features: onlyGhost}, {
+    pointToLayer: (f, latlng) => L.marker(latlng, { icon: chooseIcon(f, true), opacity: 0.35 }),
     onEachFeature: (f, layer) => {
-      layer.bindPopup(buildPoiPopup(f, null, false));
+      layer.bindPopup(buildPoiPopup(f, f.properties?._distance_m || null, false, !f.properties?._inside));
+      layer.on("popupopen", () => attachForceButtons(f));
     }
   }).addTo(map);
 }
@@ -148,7 +187,8 @@ export function renderSelectedPois(features, showLines=true) {
     pointToLayer: (f, latlng) => L.marker(latlng, { icon: chooseIcon(f, false) }),
     onEachFeature: (f, layer) => {
       const d = f.properties?._distance_m || null;
-      layer.bindPopup(buildPoiPopup(f, d, true));
+      layer.bindPopup(buildPoiPopup(f, d, true, true));
+      layer.on("popupopen", () => attachForceButtons(f));
     }
   }).addTo(map);
 
@@ -164,7 +204,21 @@ export function renderSelectedPois(features, showLines=true) {
   }
 }
 
-/* ---------- Custom POIs ---------- */
+function attachForceButtons(f) {
+  const btn = document.querySelector(`.btn-inline[data-force-id="${esc(f.id)}"]`);
+  if (!btn) return;
+  btn.addEventListener("click", () => {
+    if (typeof window.toggleForcedExport === "function") {
+      window.toggleForcedExport(f.id);
+    }
+  }, { once: true });
+}
+
+export function clearCustomPois() {
+  try { customPoisLayer.clearLayers(); } catch {}
+  _customPois = [];
+  window.dispatchEvent(new CustomEvent("custom-pois-changed"));
+}
 
 export function addCustomPoi(lat, lon, poiTypeId, label, desc = "", iconUrl = null) {
   const id = `custom:${++_customId}`;
@@ -181,7 +235,6 @@ export function addCustomPoi(lat, lon, poiTypeId, label, desc = "", iconUrl = nu
 
   const m = L.marker([lat, lon], { icon }).addTo(customPoisLayer);
 
-  // Unified export fields (match fetched)
   const tags = { name: label || "" };
   const { nameLabel, sym, desc: descLine } = buildExportFields(tags, (poiTypeId || "generic"), null);
 
@@ -205,7 +258,7 @@ export function addCustomPoi(lat, lon, poiTypeId, label, desc = "", iconUrl = nu
       <div class="subhead">GPX</div>
       <pre class="code">${esc(gpx)}</pre>
       <div class="actions">
-        <button class="btn-del" data-id="${id}">Delete</button>
+        <button class="btn-inline danger" data-id="${id}">Delete</button>
       </div>
     </div>
   `;
@@ -213,12 +266,11 @@ export function addCustomPoi(lat, lon, poiTypeId, label, desc = "", iconUrl = nu
   m.bindPopup(html);
   m._custom_id = id;
 
-  // Track for export
   _customPois.push({ id, lat, lon, type: poiTypeId, label, desc, iconUrl, marker: m });
   window.dispatchEvent(new CustomEvent("custom-pois-changed"));
 
   m.on("popupopen", () => {
-    const el = document.querySelector(`.btn-del[data-id="${id}"]`);
+    const el = document.querySelector(`.btn-inline.danger[data-id="${id}"]`);
     if (el) el.addEventListener("click", () => {
       customPoisLayer.removeLayer(m);
       _customPois = _customPois.filter(p => p.id !== id);
@@ -229,19 +281,16 @@ export function addCustomPoi(lat, lon, poiTypeId, label, desc = "", iconUrl = nu
   return { id, lat, lon, type: poiTypeId, label, desc, iconUrl };
 }
 
-/** Read-only list of custom POIs (for export) */
 export function listCustomPois() {
-  // Omit the Leaflet marker from the public copy
   return _customPois.map(({ marker, ...rest }) => ({ ...rest }));
 }
 
-/* ---------- Popups for fetched/ghosted POIs ---------- */
-function buildPoiPopup(feature, distanceM, includeGpxSnippet=false) {
+function buildPoiPopup(feature, distanceM, includeGpxSnippet=false, allowForce=false) {
   const props = feature?.properties || {};
   const [lon, lat] = feature?.geometry?.coordinates || [null, null];
 
-  const wahooId = (props?._type || props?.type || "generic").toString().trim().toLowerCase();
-  const { nameLabel, sym, desc } = buildExportFields(props, wahooId, distanceM);
+  const poiTypeId = (props?._type || props?.type || "generic").toString().trim().toLowerCase();
+  const { nameLabel, sym, desc } = buildExportFields(props, poiTypeId, distanceM);
 
   const rows = [];
   if (props?.name)          rows.push(row("Name", String(props.name)));
@@ -252,16 +301,20 @@ function buildPoiPopup(feature, distanceM, includeGpxSnippet=false) {
   let gpxBlock = "";
   if (includeGpxSnippet && Number.isFinite(lat) && Number.isFinite(lon)) {
     const gpx = buildGpxSnippet(lat, lon, nameLabel, desc, sym);
-    gpxBlock = `
-      <div class="subhead">GPX</div>
-      <pre class="code">${esc(gpx)}</pre>
-    `;
+    gpxBlock = `<div class="subhead">GPX</div><pre class="code">${esc(gpx)}</pre>`;
   }
 
+  const action = allowForce
+    ? `<div class="actions">
+         <button class="btn-inline" data-force-id="${esc(feature.id)}">${props?._forced ? "Remove from export" : "Add to export"}</button>
+       </div>`
+    : "";
+
   return `<div class="popup">
-    <div class="title">${maybeIconImg(props, wahooId)}<span>${esc(nameLabel)}</span></div>
+    <div class="title">${maybeIconImg(props, poiTypeId)}<span>${esc(nameLabel)}</span></div>
     ${rows.length ? rows.join("") : ""}
     ${gpxBlock}
+    ${action}
   </div>`;
 }
 
@@ -304,7 +357,7 @@ function chooseIcon(f, ghost) {
       className: "poi-png"
     });
   }
-  return fallbackDivIcon(ghost ? "G" : "P", ghost);
+  return fallbackDivIcon(ghost ? "G" : (props._forced ? "★" : "P"), ghost);
 }
 
 function fallbackDivIcon(text = "?", ghost=false) {
@@ -318,4 +371,4 @@ function fallbackDivIcon(text = "?", ghost=false) {
 }
 
 export function getTrackLayer(){ return trackLayer; }
-export function getLayers(){ return { trackLayer, waypointLayer, allPoisLayer, poisLayer, distanceLayer, searchBoxLayer, corridorLayer, customPoisLayer }; }
+export function getLayers(){ return { trackLayer, waypointLayer, allPoisLayer, poisLayer, distanceLayer, corridorLayer, searchPolyLayer, customPoisLayer }; }

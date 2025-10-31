@@ -1,6 +1,3 @@
-// js/mapping.js
-// Display helpers and one unified builder for GPX <name>/<desc>/<sym>/<type>.
-
 export function exportDisplayNameFromTags(tags = {}) {
   const a = (tags.amenity || "").toLowerCase();
   const s = (tags.shop || "").toLowerCase();
@@ -58,11 +55,7 @@ export function exportDisplayNameFromTags(tags = {}) {
 
 export function friendlyFromType(id) {
   if (!id) return "POI";
-  return String(id)
-    .replace(/[_-]+/g, " ")
-    .trim()
-    .replace(/\s+/g, " ")
-    .replace(/\b[a-z]/g, c => c.toUpperCase());
+  return String(id).replace(/[_-]+/g, " ").trim().replace(/\s+/g, " ").replace(/\b[a-z]/g, c => c.toUpperCase());
 }
 
 export function formatDistance(m) {
@@ -78,27 +71,14 @@ export function prettyOpeningHours(oh) {
   return String(oh);
 }
 
-/**
- * Unified export fields (used by popups + GPX export):
- *  - <name>  = label from OSM tags (if specific) else TitleCase(wahooId)
- *  - <desc>  = "wahooId | <poi name> | <distance> | <hours>"  (omit empty parts)
- *  - <sym>   = wahooId (as provided by config mapping)
- *  - <type>  = same as <sym>
- */
-export function buildExportFields(tags = {}, wahooId = "generic", distanceM = null) {
-  const sym = (wahooId || tags._type || tags.type || "generic").toString().trim().toLowerCase();
-
+export function buildExportFields(tags = {}, poiTypeId = "generic", distanceM = null) {
+  const sym = (poiTypeId || tags._type || tags.type || "generic").toString().trim().toLowerCase();
   let nameLabel = exportDisplayNameFromTags(tags);
-  if (!nameLabel || nameLabel.toLowerCase() === "poi") {
-    nameLabel = friendlyFromType(sym);
-  }
-
+  if (!nameLabel || nameLabel.toLowerCase() === "poi") nameLabel = friendlyFromType(sym);
   const poiName = (tags.name && String(tags.name).trim()) || "";
   const dist = formatDistance(distanceM);
   const hours = tags.opening_hours ? prettyOpeningHours(tags.opening_hours) : null;
-
   const parts = [sym, poiName || null, dist, hours].filter(Boolean);
   const desc = parts.join(" | ");
-
   return { nameLabel, sym, desc };
 }

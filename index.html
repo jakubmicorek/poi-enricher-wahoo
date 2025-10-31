@@ -4,15 +4,9 @@
   <link rel="icon" type="image/png" href="./icons/wahoo/wahoo-generic-wpt-icon.png">
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title>Wahoo POI Enricher | GPX → Wahoo</title>
-
-  <!-- Leaflet CSS -->
+  <title>POI Enricher</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-
-  <!-- App styles -->
   <link rel="stylesheet" href="./style.css"/>
-
-  <!-- Early, global error catcher (CSP-safe, no eval) -->
   <script>
     (function () {
       function showBoot(msg) {
@@ -31,8 +25,6 @@
         reveal();
       }
       window.__showBoot = showBoot;
-
-      // Catch resource load failures and JS exceptions (including module parse errors)
       window.addEventListener('error', function (ev) {
         var t = ev.target;
         if (t && t !== window && (t.src || t.href)) {
@@ -50,8 +42,6 @@
 </head>
 <body>
   <div id="boot-error" class="boot-error" style="display:none"></div>
-
-  <!-- Top bar -->
   <header class="topbar" role="banner">
     <div>
       <button id="btn-toggle-left" class="icon-btn" aria-pressed="true" title="Toggle left panel">
@@ -59,7 +49,7 @@
       </button>
     </div>
     <div class="brand" aria-label="App title">
-      <span class="title">Wahoo POI Enricher</span>
+      <span class="title">POI Enricher</span>
     </div>
     <div>
       <button id="btn-add-poi" class="icon-btn" aria-pressed="false" title="Add POI">
@@ -70,46 +60,68 @@
       </button>
     </div>
   </header>
-
-  <!-- App layout -->
   <main class="app" role="main" aria-label="Map and panels">
-    <!-- Left column -->
     <aside id="left-panel" class="panel-col open" aria-label="Left panel">
-
       <section class="panel" aria-labelledby="load-title">
         <h2 id="load-title">Load GPX</h2>
         <p class="hint">Pick a <strong>.gpx</strong> file. Drag &amp; drop anywhere also works.</p>
-
-        <label class="hint" style="display:block;margin-bottom:8px">
+        <label class="hint block">
           <input id="opt-drop-wpts" type="checkbox"/>
           Ignore waypoints from file (don’t load or re-export them)
         </label>
+        <br>
         <input id="file" type="file" accept=".gpx"/>
-
         <p id="status" class="status-in-box hint"></p>
       </section>
-
       <section class="panel" aria-labelledby="corridor-title">
-        <h2 id="corridor-title">Corridor &amp; Export</h2>
-        <div class="poi-controls" style="margin:0 0 8px">
-          <label>Corridor width (m):
-            <input id="poi-range-m" type="number" min="5" step="5" value="100"/>
-          </label>
-          <br>
-          <label>
-            Show line from POI to track:
-            <input id="toggle-lines" type="checkbox" checked/>
-          </label>
+        <h2 id="corridor-title">Search &amp; Export</h2>
+        <div class="ranges-grid">
+          <div class="rg-row">
+            <label for="search-range-m">Search range</label>
+            <div class="rg-input">
+              <input id="search-range-m" type="number" min="50" step="50" value="500"/>
+              <span class="unit">m</span>
+            </div>
+          </div>
+          <div class="rg-row">
+            <label for="poi-range-m">Export range</label>
+            <div class="rg-input">
+              <input id="poi-range-m" type="number" min="5" step="5" value="100"/>
+              <span class="unit">m</span>
+            </div>
+          </div>
         </div>
+        <label class="stacky">
+          <span>Show line from POI to track</span>
+          <input id="toggle-lines" type="checkbox" checked/>
+        </label>
+        <br>
         <div class="poi-controls">
-          <a id="btn-download-gpx" class="btn" href="#" download="enriched.gpx" style="display:none">
-            Download enriched GPX
-          </a>
+          <a id="btn-download-gpx" class="btn" href="#" download="enriched.gpx">Download enriched GPX</a>
         </div>
       </section>
-
+      <section class="panel" aria-labelledby="platform-title">
+        <h2 id="platform-title">Device Template</h2>
+        <div class="platform-row">
+          <label for="platform-select" class="sr-only">Choose template</label>
+          <select id="platform-select">
+            <option value="wahoo" selected>Wahoo BOLT3/ROAM3/ACE</option>
+            <option value="strava">Strava</option>
+            <option value="rwgps">RWGPS</option>
+            <option value="komoot">Komoot</option>
+          </select>
+          <span class="hint">Changes icon set + mapping. Clears fetched/custom POIs.</span>
+        </div>
+      </section>
       <section class="panel" aria-labelledby="about-title">
         <h2 id="about-title">About</h2>
+        <div class="donate">
+          <p>If this tool helps you, consider supporting it:</p>
+          <a class="donate-btn" href="https://www.paypal.com/donate/?hosted_button_id=MJF3AHPSQGFLS" target="_blank" rel="noopener noreferrer">
+            <img alt="Donate via PayPal" src="https://img.shields.io/badge/Donate-PayPal-blue.svg">
+          </a>
+        </div>
+        <hr class="sep">
         <p>
           Load a GPX route and add nearby points of interest from OpenStreetMap: water taps, toilets, food, fuel, bike
           shops, campsites, viewpoints, and more. Alternatively, you can manually add POIs using the + button.
@@ -117,46 +129,31 @@
             waypoints use Wahoo-compatible types so devices like the ACE, BOLT 3, and ROAM 3 display the right icons.</a>
           Tested on a ROAM 3: on-device maps currently render <code>water</code>, <code>food</code>, <code>summit</code>,
           <code>valley</code>, and <code>sprint</code> with dedicated icons; other documented types are shown as a <code>generic</code>
-          marker.
+          marker. Not tested yet: Templates for Strava, RWPGS, and Komoot are also available - these limit the POI types panel to each
+          platform's supported categories.
         </p>
-        <hr class="sep">
-        <div class="donate">
-          <p>If this tool helps you, consider supporting it:</p>
-          <a class="donate-btn" href="https://www.paypal.com/donate/?hosted_button_id=MJF3AHPSQGFLS" target="_blank"
-             rel="noopener noreferrer">
-            <img alt="Donate via PayPal" src="https://img.shields.io/badge/Donate-PayPal-blue.svg">
-          </a>
-        </div>
       </section>
     </aside>
-
-    <!-- Map -->
     <div class="map-wrap" aria-label="Map">
       <div id="map"></div>
     </div>
-
-    <!-- Right column: POI selection -->
     <aside id="right-panel" class="panel-col open" aria-label="POI panel">
       <section class="panel" id="poi-panel" aria-labelledby="poi-title">
         <h2 id="poi-title" style="margin-bottom:6px">POI Selection</h2>
-
         <div class="sticky-header">
-          <p class="status-in-box hint" aria-live="polite">Click to remove a POI from the list.</p>
+          <p class="status-in-box hint" aria-live="polite">Click a chip to unselect. You can also force‑add any POI by clicking it on the map.</p>
           <div id="selected-chips" class="chips" aria-live="polite"></div>
-          <p id="poi-status" class="status-in-box hint" aria-live="polite"></p>
-
+          <hr class="sep">
           <div class="fetch-row">
             <button id="btn-fetch-selected" class="btn" type="button">Fetch selected</button>
             <button id="btn-fetch-all" class="btn btn-ghost" type="button">Fetch ALL</button>
           </div>
+          <p id="poi-status" class="status-in-box hint" aria-live="polite"></p>
         </div>
-
         <div id="poi-groups" class="poi-groups" role="region" aria-label="POI categories"></div>
       </section>
     </aside>
   </main>
-
-  <!-- Add-POI Modal -->
   <div id="add-poi-modal" class="modal-overlay" aria-hidden="true">
     <div class="modal" role="dialog" aria-labelledby="add-poi-heading" aria-modal="true">
       <div class="modal-head">
@@ -172,14 +169,10 @@
           <span>Description (optional)</span>
           <input id="add-poi-desc" type="text" placeholder="Extra info shown in GPX & device"/>
         </label>
-
         <div class="field">
           <span>POI type</span>
-          <div id="add-poi-types" class="type-list">
-            <!-- categories + radio items with icons injected here -->
-          </div>
+          <div id="add-poi-types" class="type-list"></div>
         </div>
-
         <p class="hint">Click “Place on map”, then click the map where the POI should go.</p>
       </div>
       <div class="modal-foot">
@@ -188,34 +181,15 @@
       </div>
     </div>
   </div>
-
-  <!-- Libraries (classic scripts; crossorigin for useful error messages) -->
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@tmcw/togeojson" crossorigin="anonymous"></script>
   <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js" crossorigin="anonymous"></script>
-
-  <!-- Loader: show a friendly message on browsers without ES modules -->
-  <script nomodule>
-    (window.__showBoot || function (m) { alert(m); })(
-      'This in-app browser is too old to run the mapper. Open in your system browser (Chrome/Safari/Firefox).'
-    );
-  </script>
-
-  <!-- App loader (inline, CSP-safe). If import fails, report the error. -->
-  <script type="module">
-    import('./js/main.js')
-      .catch(err => {
-        const msg = (err && (err.stack || err.message)) || String(err);
-        (window.__showBoot || (m => console.error(m)))('Startup error: ' + msg);
-      });
-  </script>
-
-  <!-- Concise Footer -->
+  <script type="module" src="./js/main.js"></script>
   <footer class="site-footer" role="contentinfo" aria-label="Credits">
     <div class="wrap">
-      <p>Built with <a href="https://leafletjs.com/" target="_blank" rel="noopener noreferrer">Leaflet</a>.</p>
+      <p>Built with Leaflet.</p>
       <p style="text-align:center">All files are processed locally in your browser.</p>
-      <p>Wahoo&reg;, ACE, BOLT 3, and ROAM 3 are trademarks of Wahoo Fitness; no affiliation.</p>
+      <p>No affiliation with any device maker.</p>
     </div>
   </footer>
 </body>

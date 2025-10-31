@@ -1,27 +1,43 @@
-// js/gpx.js
 import { buildExportFields } from "./mapping.js";
 
-/** NEW: strip all <wpt> from a GPX string (used when user chooses the option) */
 export function stripWaypointsFromGpx(gpxXmlString) {
   if (!gpxXmlString) return "";
   const doc = new DOMParser().parseFromString(gpxXmlString, "text/xml");
   const gpx = doc.documentElement;
-  const nodes = Array.from(gpx.getElementsByTagName("wpt"));
-  nodes.forEach(n => gpx.removeChild(n));
+
+  // Collect ALL waypoint elements regardless of namespace prefix (e.g., <wpt> or <gpx:wpt>)
+  const toRemove = [];
+  // TreeWalker is robust and fast for XML docs; matches by localName
+  const walker = doc.createTreeWalker(gpx, NodeFilter.SHOW_ELEMENT);
+  for (let n = walker.currentNode; n; n = walker.nextNode()) {
+    const ln = (n.localName || n.nodeName || "").toLowerCase();
+    if (ln === "wpt") toRemove.push(n);
+  }
+
+  // Remove them (and trim any surrounding empty text nodes for neatness)
+  toRemove.forEach((n) => {
+    const p = n.parentNode;
+    if (!p) return;
+    // remove the waypoint element
+    p.removeChild(n);
+    // clean adjacent whitespace-only text nodes (purely cosmetic)
+    if (p.firstChild && p.firstChild.nodeType === 3 && !p.firstChild.nodeValue.trim()) {
+      p.removeChild(p.firstChild);
+    }
+    if (p.lastChild && p.lastChild.nodeType === 3 && !p.lastChild.nodeValue.trim()) {
+      p.removeChild(p.lastChild);
+    }
+  });
+
   return new XMLSerializer().serializeToString(doc);
 }
 
-/**
- * Adds POIs as <wpt> to a GPX doc.
- * Now with de-duplication against existing <wpt> (and within the batch).
- */
 export function addPoisAsWaypointsToGpx(gpxXmlString, pois) {
   if (!gpxXmlString) return "";
   const doc = new DOMParser().parseFromString(gpxXmlString, "text/xml");
   const gpx = doc.documentElement;
   const ns  = gpx.namespaceURI || "http://www.topografix.com/GPX/1/1";
 
-  // Collect existing waypoint signatures to avoid duplicates
   const existingSig = new Set();
   const textOf = (parent, tag) => {
     const el = parent.getElementsByTagName(tag)[0];
@@ -39,7 +55,6 @@ export function addPoisAsWaypointsToGpx(gpxXmlString, pois) {
     existingSig.add(sig(lat, lon, name, sym, desc));
   });
 
-  // Insert before first of these, to keep waypoints near the top if present
   let firstChild = null;
   for (const tag of ["wpt","rte","trk"]) {
     const el = gpx.getElementsByTagName(tag)[0];
@@ -50,12 +65,10 @@ export function addPoisAsWaypointsToGpx(gpxXmlString, pois) {
   const batchSig = new Set();
 
   function appendIndentedWpt(node, nameText, symText, descText) {
-    // Skip if duplicate vs existing or within this batch
     const s = sig(node.getAttribute("lat"), node.getAttribute("lon"), nameText, symText, descText);
     if (existingSig.has(s) || batchSig.has(s)) return;
     batchSig.add(s);
 
-    // Pretty insert
     gpx.insertBefore(doc.createTextNode("\n"), firstChild || null);
 
     const wpt = doc.createElementNS(ns, "wpt");
@@ -63,7 +76,6 @@ export function addPoisAsWaypointsToGpx(gpxXmlString, pois) {
       wpt.setAttribute(name, value);
     }
 
-    // Rebuild children with pretty indentation
     const kids = Array.from(node.childNodes).filter(n => !(n.nodeType === 3 && !n.nodeValue.trim()));
     wpt.appendChild(doc.createTextNode("\n" + IND));
     kids.forEach((k) => {
@@ -78,10 +90,10 @@ export function addPoisAsWaypointsToGpx(gpxXmlString, pois) {
 
   (pois || []).forEach(p => {
     const tags = p.tags || {};
-    const wahooId = (p._type || tags._type || tags.type || "generic").toString().trim().toLowerCase();
+    const poiTypeId = (p._type || tags._type || tags.type || "generic").toString().trim().toLowerCase();
     const dist = p._distance_m ?? null;
 
-    const { nameLabel, sym, desc } = buildExportFields(tags, wahooId, dist);
+    const { nameLabel, sym, desc } = buildExportFields(tags, poiTypeId, dist);
 
     const wpt = doc.createElementNS(ns, "wpt");
     wpt.setAttribute("lat", toFixed5(p.lat));
@@ -95,12 +107,10 @@ export function addPoisAsWaypointsToGpx(gpxXmlString, pois) {
     appendIndentedWpt(wpt, nameLabel, sym, desc);
   });
 
-  // Cosmetic: trailing newline
   gpx.appendChild(doc.createTextNode("\n"));
   return new XMLSerializer().serializeToString(doc);
 }
 
-/* ---------- helpers ---------- */
 function toFixed5(n) {
   const x = Number(n);
   return Number.isFinite(x) ? x.toFixed(5) : String(n);

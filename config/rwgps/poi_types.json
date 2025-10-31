@@ -1,0 +1,113 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "generic",
+      "label": "Generic",
+      "color": "gray",
+      "defaultExpanded": false,
+      "items": [
+        { "id": "Generic", "label": "Generic", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "health_safety",
+      "label": "Health & Safety",
+      "color": "red",
+      "defaultExpanded": false,
+      "items": [
+        { "id": "Caution", "label": "Caution", "icon": "icons/undefined.svg" },
+        { "id": "Aid Station", "label": "Aid Station", "icon": "icons/undefined.svg" },
+        { "id": "First Aid", "label": "First Aid", "icon": "icons/undefined.svg" },
+        { "id": "Hospital", "label": "Hospital", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "food_drink_fuel",
+      "label": "Food, Drink & Fuel",
+      "color": "orange",
+      "defaultExpanded": true,
+      "items": [
+        { "id": "Bar", "label": "Bar", "icon": "icons/undefined.svg" },
+        { "id": "Bike Shop", "label": "Bike Shop", "icon": "icons/undefined.svg" },
+        { "id": "Coffee", "label": "Coffee", "icon": "icons/undefined.svg" },
+        { "id": "Food", "label": "Food", "icon": "icons/undefined.svg" },
+        { "id": "Gas Station", "label": "Gas Station", "icon": "icons/undefined.svg" },
+        { "id": "Convenience Store", "label": "Convenience Store", "icon": "icons/undefined.svg" },
+        { "id": "Shopping", "label": "Shopping", "icon": "icons/undefined.svg" },
+        { "id": "Water", "label": "Water", "icon": "icons/undefined.svg" },
+        { "id": "Winery", "label": "Winery", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "info_facilities",
+      "label": "Info & Facilities",
+      "color": "blue",
+      "defaultExpanded": true,
+      "items": [
+        { "id": "Information", "label": "Information", "icon": "icons/undefined.svg" },
+        { "id": "Library", "label": "Library", "icon": "icons/undefined.svg" },
+        { "id": "Lodging", "label": "Lodging", "icon": "icons/undefined.svg" },
+        { "id": "Shower", "label": "Shower", "icon": "icons/undefined.svg" },
+        { "id": "Restroom", "label": "Restroom", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "transport_parking",
+      "label": "Transport & Parking",
+      "color": "teal",
+      "defaultExpanded": false,
+      "items": [
+        { "id": "Bike Parking", "label": "Bike Parking", "icon": "icons/undefined.svg" },
+        { "id": "Bike Share", "label": "Bike Share", "icon": "icons/undefined.svg" },
+        { "id": "Ferry", "label": "Ferry", "icon": "icons/undefined.svg" },
+        { "id": "Parking", "label": "Parking", "icon": "icons/undefined.svg" },
+        { "id": "Transit Center", "label": "Transit Center", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "outdoors_nature",
+      "label": "Outdoors & Nature",
+      "color": "green",
+      "defaultExpanded": true,
+      "items": [
+        { "id": "Camping", "label": "Camping", "icon": "icons/undefined.svg" },
+        { "id": "Trailhead", "label": "Trailhead", "icon": "icons/undefined.svg" },
+        { "id": "Summit", "label": "Summit", "icon": "icons/undefined.svg" },
+        { "id": "Geocache", "label": "Geocache", "icon": "icons/undefined.svg" },
+        { "id": "Park", "label": "Park", "icon": "icons/undefined.svg" },
+        { "id": "Rest Stop", "label": "Rest Stop", "icon": "icons/undefined.svg" },
+        { "id": "Viewpoint", "label": "Viewpoint", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "banking",
+      "label": "Banking",
+      "color": "purple",
+      "defaultExpanded": false,
+      "items": [
+        { "id": "ATM", "label": "ATM", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "culture_sights",
+      "label": "Culture & Sights",
+      "color": "brown",
+      "defaultExpanded": false,
+      "items": [
+        { "id": "Monument", "label": "Monument", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "race_segments",
+      "label": "Race & Segments",
+      "color": "magenta",
+      "defaultExpanded": false,
+      "items": [
+        { "id": "Segment Start", "label": "Segment Start", "icon": "icons/undefined.svg" },
+        { "id": "Segment End", "label": "Segment End", "icon": "icons/undefined.svg" },
+        { "id": "Sprint", "label": "Sprint", "icon": "icons/undefined.svg" }
+      ]
+    }
+  ]
+}

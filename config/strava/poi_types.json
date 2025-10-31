@@ -1,0 +1,76 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "generic",
+      "label": "Generic",
+      "color": "gray",
+      "defaultExpanded": false,
+      "items": [
+        { "id": "Generic", "label": "Generic", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "health_safety",
+      "label": "Health & Safety",
+      "color": "red",
+      "defaultExpanded": false,
+      "items": [
+        { "id": "Alert", "label": "Alert", "icon": "icons/undefined.svg" },
+        { "id": "Aid Station", "label": "Aid Station", "icon": "icons/undefined.svg" },
+        { "id": "Pharmacy", "label": "Pharmacy", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "food_drink",
+      "label": "Food & Drink",
+      "color": "orange",
+      "defaultExpanded": true,
+      "items": [
+        { "id": "Bars", "label": "Bars", "icon": "icons/undefined.svg" },
+        { "id": "Bike Shop", "label": "Bike Shop", "icon": "icons/undefined.svg" },
+        { "id": "Coffee", "label": "Coffee", "icon": "icons/undefined.svg" },
+        { "id": "Restaurant", "label": "Restaurant", "icon": "icons/undefined.svg" },
+        { "id": "Grocery", "label": "Grocery", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "info_facilities",
+      "label": "Info & Facilities",
+      "color": "blue",
+      "defaultExpanded": true,
+      "items": [
+        { "id": "Lodging", "label": "Lodging", "icon": "icons/undefined.svg" },
+        { "id": "Restroom", "label": "Restroom", "icon": "icons/undefined.svg" },
+        { "id": "Water Source", "label": "Water Source", "icon": "icons/undefined.svg" },
+        { "id": "Parking", "label": "Parking", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "outdoors",
+      "label": "Outdoors & Sights",
+      "color": "green",
+      "defaultExpanded": true,
+      "items": [
+        { "id": "Park", "label": "Park", "icon": "icons/undefined.svg" },
+        { "id": "Trailhead", "label": "Trailhead", "icon": "icons/undefined.svg" },
+        { "id": "Peak", "label": "Peak", "icon": "icons/undefined.svg" },
+        { "id": "Art", "label": "Art", "icon": "icons/undefined.svg" },
+        { "id": "Attraction", "label": "Attraction", "icon": "icons/undefined.svg" },
+        { "id": "Monument", "label": "Monument", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "race_segments",
+      "label": "Race & Segments",
+      "color": "magenta",
+      "defaultExpanded": false,
+      "items": [
+        { "id": "Distance marker", "label": "Distance marker", "icon": "icons/undefined.svg" },
+        { "id": "Meeting spot", "label": "Meeting spot", "icon": "icons/undefined.svg" },
+        { "id": "Segment start", "label": "Segment start", "icon": "icons/undefined.svg" },
+        { "id": "Segment end", "label": "Segment end", "icon": "icons/undefined.svg" }
+      ]
+    }
+  ]
+}

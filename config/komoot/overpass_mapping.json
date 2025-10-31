@@ -1,0 +1,31 @@
+{
+  "version": 1,
+  "map": {
+    "drinking_water": "Public Water Fountains",
+    "cafe": "Food and Drink",
+    "restaurant": "Food and Drink",
+    "fast_food": "Food and Drink",
+    "bakery": "Food and Drink",
+    "bicycle_shop": "Bike Repair",
+    "bicycle_repair": "Bike Repair",
+    "charging_station": "E-Bike Charging Points",
+    "chair_lift": "Cable Cars & Chairlifts",
+    "parking": "Parking",
+    "bus_station": "Train Stations and Bus Stops",
+    "railway_station": "Train Stations and Bus Stops",
+    "pt_station": "Train Stations and Bus Stops",
+    "internet_cafe": "Internet Hot Spots",
+    "lodging": "Accommodation",
+    "toilets": "Public Toilets",
+    "park": "Parks",
+    "rest_area": "Shelter + Benches and Picnic Areas",
+    "shelter": "Shelter + Benches and Picnic Areas",
+    "peak": "Mountain Passes",
+    "viewpoint": "Natural Sights",
+    "attraction": "Points of Interest",
+    "monument": "Points of Interest",
+    "atm": "ATMs",
+    "dog_park": "For Dogs",
+    "trailhead": "Points of Interest"
+  }
+}

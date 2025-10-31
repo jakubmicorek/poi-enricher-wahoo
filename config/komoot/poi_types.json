@@ -1,0 +1,69 @@
+{
+  "version": 1,
+  "categories": [
+    {
+      "id": "generic",
+      "label": "Generic",
+      "color": "gray",
+      "defaultExpanded": false,
+      "items": [
+        { "id": "Generic", "label": "Generic", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "info_facilities",
+      "label": "Info & Facilities",
+      "color": "blue",
+      "defaultExpanded": true,
+      "items": [
+        { "id": "Accommodation", "label": "Accommodation", "icon": "icons/undefined.svg" },
+        { "id": "Public Toilets", "label": "Public Toilets", "icon": "icons/undefined.svg" },
+        { "id": "Internet Hot Spots", "label": "Internet Hot Spots", "icon": "icons/undefined.svg" },
+        { "id": "ATMs", "label": "ATMs", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "food_drink",
+      "label": "Food & Drink",
+      "color": "orange",
+      "defaultExpanded": true,
+      "items": [
+        { "id": "Food and Drink", "label": "Food and Drink", "icon": "icons/undefined.svg" },
+        { "id": "Public Water Fountains", "label": "Public Water Fountains", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "transport_parking",
+      "label": "Transport & Parking",
+      "color": "teal",
+      "defaultExpanded": false,
+      "items": [
+        { "id": "Parking", "label": "Parking", "icon": "icons/undefined.svg" },
+        { "id": "Train Stations and Bus Stops", "label": "Train Stations and Bus Stops", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "outdoors_nature",
+      "label": "Outdoors & Nature",
+      "color": "green",
+      "defaultExpanded": true,
+      "items": [
+        { "id": "Parks", "label": "Parks", "icon": "icons/undefined.svg" },
+        { "id": "Shelter + Benches and Picnic Areas", "label": "Shelter + Benches and Picnic Areas", "icon": "icons/undefined.svg" },
+        { "id": "Mountain Passes", "label": "Mountain Passes", "icon": "icons/undefined.svg" },
+        { "id": "Natural Sights", "label": "Natural Sights", "icon": "icons/undefined.svg" },
+        { "id": "For Dogs", "label": "For Dogs", "icon": "icons/undefined.svg" }
+      ]
+    },
+    {
+      "id": "culture_sights",
+      "label": "Culture & Sights",
+      "color": "brown",
+      "defaultExpanded": false,
+      "items": [
+        { "id": "Points of Interest", "label": "Points of Interest", "icon": "icons/undefined.svg" },
+        { "id": "Stamp Station", "label": "Stamp Station", "icon": "icons/undefined.svg" }
+      ]
+    }
+  ]
+}

@@ -1,108 +1,70 @@
-// js/main.js
 import { $, $$, debounce } from "./util.js";
 import {
   initMap,
   getMap,
   renderTrackAndWaypoints,
   getRouteLine,
-  drawSearchBox,
   drawCorridor,
   addCustomPoi,
   renderAllPoisGhosted,
   renderSelectedPois,
-  listCustomPois
+  listCustomPois,
+  drawSearchPolygon,
+  clearCustomPois,
 } from "./mapview.js";
 import {
-  FETCH_BBOX_RADIUS_M,
-  buildOverpassQueryFromConfig,
+  buildOverpassQueryFromConfigPoly,
   overpassFetch
 } from "./overpass.js";
 import { addPoisAsWaypointsToGpx, stripWaypointsFromGpx } from "./gpx.js";
 
-/* ---------- CDN fallbacks for IABs that block unpkg ---------- */
 const CDN_FALLBACKS = {
   leaflet_js:  "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js",
   leaflet_css: "https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css",
   togeojson:   "https://cdn.jsdelivr.net/npm/@tmcw/togeojson",
   turf:        "https://cdn.jsdelivr.net/npm/@turf/turf@6.5.0/turf.min.js",
 };
-
-function loadScriptOnce(src) {
-  return new Promise((resolve, reject) => {
-    if ([...document.scripts].some(s => s.src === src)) return resolve();
-    const el = document.createElement("script");
-    el.src = src;
-    el.async = true;
-    el.onload = () => resolve();
-    el.onerror = () => reject(new Error(`Failed loading ${src}`));
-    document.head.appendChild(el);
-  });
-}
-function loadCssOnce(href) {
-  if ([...document.styleSheets].some(ss => ss.href === href)) return;
-  const el = document.createElement("link");
-  el.rel = "stylesheet";
-  el.href = href;
-  document.head.appendChild(el);
-}
+function loadScriptOnce(src) { return new Promise((resolve, reject) => { if ([...document.scripts].some(s => s.src === src)) return resolve(); const el = document.createElement("script"); el.src = src; el.async = true; el.onload = () => resolve(); el.onerror = () => reject(new Error(`Failed loading ${src}`)); document.head.appendChild(el); }); }
+function loadCssOnce(href) { if ([...document.styleSheets].some(ss => ss.href === href)) return; const el = document.createElement("link"); el.rel = "stylesheet"; el.href = href; document.head.appendChild(el); }
 async function ensureLibsLoaded() {
-  // If any are missing, try fallbacks.
-  const needLeaflet   = !window.L;
-  const needTgj       = !window.toGeoJSON;
-  const needTurf      = !window.turf;
-
-  if (needLeaflet) {
-    loadCssOnce(CDN_FALLBACKS.leaflet_css);
-    try { await loadScriptOnce(CDN_FALLBACKS.leaflet_js); } catch {}
-  }
+  const needLeaflet = !window.L, needTgj = !window.toGeoJSON, needTurf = !window.turf;
+  if (needLeaflet) { loadCssOnce(CDN_FALLBACKS.leaflet_css); try { await loadScriptOnce(CDN_FALLBACKS.leaflet_js); } catch {} }
   if (!window.L) return { ok:false, reason:"Leaflet failed to load" };
-
-  if (needTgj) {
-    try { await loadScriptOnce(CDN_FALLBACKS.togeojson); } catch {}
-  }
+  if (needTgj) { try { await loadScriptOnce(CDN_FALLBACKS.togeojson); } catch {} }
   if (!window.toGeoJSON) return { ok:false, reason:"toGeoJSON failed to load" };
-
-  if (needTurf) {
-    try { await loadScriptOnce(CDN_FALLBACKS.turf); } catch {}
-  }
+  if (needTurf) { try { await loadScriptOnce(CDN_FALLBACKS.turf); } catch {} }
   if (!window.turf) return { ok:false, reason:"Turf.js failed to load" };
-
   return { ok:true };
 }
 
 /* ---------- Config state ---------- */
-let WAHOO = { version: 1, categories: [] };
-let OVERPASS = { version: 1, items: [] };
-const WAHOO_ITEM_BY_ID = new Map();
+let PLATFORM = "wahoo";
+let POI_TYPES = { version: 1, categories: [] };          // from ./config/<platform>/poi_types.json
+let OVERPASS = { version: 1, items: [] };                // from ./config/overpass.json
+let MAPPING = { version: 1, map: {} };                   // from ./config/<platform>/overpass_mapping.json
+
+const TYPE_BY_ID = new Map();
 const CATEGORY_ORDER = [];
 const CATEGORY_META = new Map();
 
 /* ---------- App state ---------- */
 let originalGpxXmlString = "";
 let originalFilename = "route.gpx";
-
-// add-poi modal state
-let pendingPoiTypeId = null;
-let pendingPoiName = "";
-let pendingPoiDesc = "";
+let pendingPoiTypeId = null, pendingPoiName = "", pendingPoiDesc = "";
 
 /* ---------- POI render state ---------- */
 let ALL_FETCHED_POIS = [];
-let LAST_INSIDE_SELECTED = [];
+let LAST_EXPORT_SET = [];
+let SEARCH_POLY = null;
 let CORRIDOR_POLY = null;
 let SHOW_DISTANCE_LINES = true;
+const FORCED_EXPORT = new Set(); // feature IDs
 
-/* ---------- Live status text (message + counts) ---------- */
+/* ---------- Live status text ---------- */
 let POI_UI_MSG = "";
 
 /* ---------- Responsive ---------- */
-function isMobile() {
-  try {
-    return (window.matchMedia && matchMedia("(max-width: 820px)").matches) || window.innerWidth <= 820;
-  } catch {
-    return window.innerWidth <= 820;
-  }
-}
+function isMobile() { try { return (window.matchMedia && matchMedia("(max-width: 820px)").matches) || window.innerWidth <= 820; } catch { return window.innerWidth <= 820; } }
 function applyInitialPanelState() {
   const mob = isMobile();
   document.body.classList.toggle("mob", mob);
@@ -114,29 +76,16 @@ function applyInitialPanelState() {
 
 /* ---------- Errors ---------- */
 let _bootErrorShown = false;
-window.addEventListener("error", (e) => {
-  // In many IABs, cross-origin errors are just "Script error."
-  const msg = e?.message || "Unknown error";
-  if (_bootErrorShown) return;
-  showBootError(msg);
-});
-window.addEventListener("unhandledrejection", (e) => {
-  const msg = e?.reason?.message || e?.reason || "Unhandled rejection";
-  if (_bootErrorShown) return;
-  showBootError(String(msg));
-});
+window.addEventListener("error", (e) => { const msg = e?.message || "Unknown error"; if (_bootErrorShown) return; showBootError(msg); });
+window.addEventListener("unhandledrejection", (e) => { const msg = e?.reason?.message || e?.reason || "Unhandled rejection"; if (_bootErrorShown) return; showBootError(String(msg)); });
 
-/* ---------- Startup (robust, with CDN fallbacks) ---------- */
+/* ---------- Startup ---------- */
 let __started = false;
 async function startApp() {
-  if (__started) return;
-  __started = true;
+  if (__started) return; __started = true;
   try {
     const libs = await ensureLibsLoaded();
-    if (!libs.ok) {
-      showBootError(`${libs.reason}. In-app browsers sometimes block CDNs. Open in your browser or try again.`);
-      return;
-    }
+    if (!libs.ok) { showBootError(`${libs.reason}. In-app browsers sometimes block CDNs. Open in your browser or try again.`); return; }
 
     initMap();
     hookMapClicksForPlacement();
@@ -144,11 +93,9 @@ async function startApp() {
     await loadConfigsSafe();
     indexConfigs();
 
-    // Expose lookup so mapview can render waypoint icons for imported GPX.
     window.getWahooIconUrl = (id) => {
       const key = String(id || "").trim().toLowerCase();
-      const known = WAHOO_ITEM_BY_ID.get(key)?.icon || null;
-      // Fallback if unknown: generic round icon
+      const known = TYPE_BY_ID.get(key)?.icon || null;
       return known || "icons/undefined.svg";
     };
 
@@ -161,73 +108,48 @@ async function startApp() {
 
     await autoLoadSample();
 
-    drawSearchBoxAndCorridor();
+    drawSearchAndCorridorPolys();
     setPoiStatus("Choose POIs and fetch.");
     updateExportUi();
     updateCountsStatus();
-  } catch (err) {
-    showBootError(err?.stack || err?.message || String(err));
-  }
+  } catch (err) { showBootError(err?.stack || err?.message || String(err)); }
 }
-
-// Run immediately if DOM is already parsed, otherwise wait once.
-if (document.readyState === "loading") {
-  window.addEventListener("DOMContentLoaded", startApp, { once: true });
-} else {
-  startApp();
-}
+if (document.readyState === "loading") { window.addEventListener("DOMContentLoaded", startApp, { once: true }); } else { startApp(); }
 
 /* ---------- Config load/index ---------- */
 async function loadConfigsSafe() {
-  try {
-    const res = await fetch("./config/wahoo.json", { cache: "no-store" });
-    if (res.ok) WAHOO = await res.json();
-  } catch {}
-  try {
-    const res = await fetch("./config/overpass.json", { cache: "no-store" });
-    if (res.ok) OVERPASS = await res.json();
-  } catch {}
+  try { const res = await fetch("./config/overpass.json", { cache: "no-store" }); if (res.ok) OVERPASS = await res.json(); } catch {}
+  try { const res = await fetch(`./config/${PLATFORM}/poi_types.json`, { cache: "no-store" }); if (res.ok) POI_TYPES = await res.json(); } catch {}
+  try { const res = await fetch(`./config/${PLATFORM}/overpass_mapping.json`, { cache: "no-store" }); if (res.ok) MAPPING = await res.json(); } catch {}
 }
 function indexConfigs() {
-  WAHOO_ITEM_BY_ID.clear();
-  CATEGORY_ORDER.length = 0;
-  CATEGORY_META.clear();
-  (WAHOO?.categories || []).forEach(cat => {
+  TYPE_BY_ID.clear(); CATEGORY_ORDER.length = 0; CATEGORY_META.clear();
+  (POI_TYPES?.categories || []).forEach(cat => {
     CATEGORY_ORDER.push(cat.id);
-    CATEGORY_META.set(cat.id, {
-      label: cat.label,
-      color: cat.color || "gray",
-      defaultExpanded: !!cat.defaultExpanded
-    });
+    CATEGORY_META.set(cat.id, { label: cat.label, color: cat.color || "gray", defaultExpanded: !!cat.defaultExpanded });
     (cat.items || []).forEach(it => {
-      WAHOO_ITEM_BY_ID.set(it.id, {
-        ...it,
-        categoryId: cat.id,
-        categoryLabel: cat.label,
-        color: cat.color || "gray"
-      });
+      TYPE_BY_ID.set(it.id, { ...it, categoryId: cat.id, categoryLabel: cat.label, color: cat.color || "gray" });
     });
   });
 }
 
 /* ---------- Build POI panel ---------- */
 function buildPoiPanel() {
-  const wrap = $("#poi-groups");
-  if (!wrap) return;
+  const wrap = $("#poi-groups"); if (!wrap) return;
   wrap.innerHTML = "";
 
   const byCat = new Map();
   (OVERPASS?.items || []).forEach(op => {
-    const w = WAHOO_ITEM_BY_ID.get(op.wahoo_id);
+    const mappedTypeId = MAPPING?.map?.[op.id] || "generic";
+    const w = TYPE_BY_ID.get(mappedTypeId);
     if (!w) return;
     if (!byCat.has(w.categoryId)) byCat.set(w.categoryId, []);
-    byCat.get(w.categoryId).push({ op, w });
+    byCat.get(w.categoryId).push({ op, w, mappedTypeId });
   });
 
   CATEGORY_ORDER.forEach(catId => {
     const rows = byCat.get(catId);
     if (!rows?.length) return;
-
     rows.sort((a,b) => a.op.label.localeCompare(b.op.label));
     const { label: catLabel, color } = CATEGORY_META.get(catId) || { label: catId, color: "gray" };
 
@@ -237,30 +159,26 @@ function buildPoiPanel() {
 
     const head = document.createElement("div");
     head.className = "poi-cat-head";
-    head.innerHTML = `
-      <span class="pill ${color}" aria-hidden="true"></span>
+    head.innerHTML = `<span class="pill ${color}" aria-hidden="true"></span>
       <span class="poi-cat-title">${catLabel}</span>
       <span class="poi-cat-actions">
         <button type="button" class="btn-mini act-all">Select all</button>
         <button type="button" class="btn-mini act-none">Unselect all</button>
-      </span>
-    `;
+      </span>`;
     catEl.appendChild(head);
 
     const body = document.createElement("div");
     body.className = "poi-cat-body";
 
-    rows.forEach(({op, w}) => {
+    rows.forEach(({op, w, mappedTypeId}) => {
       const row = document.createElement("label");
       row.className = "poi-row";
       const checked = op.defaultSelected ? "checked" : "";
       const icon = w.icon || "";
-      row.innerHTML = `
-        <input type="checkbox" data-op="${op.id}" data-wahoo="${w.id}" ${checked}/>
+      row.innerHTML = `<input type="checkbox" data-op="${op.id}" data-type="${mappedTypeId}" ${checked}/>
         <img src="${icon}" alt="${w.id}" onerror="this.style.display='none'"/>
         <span>${op.label}</span>
-        <span class="map-chip">${w.id}</span>
-      `;
+        <span class="map-chip">${w.id}</span>`;
       body.appendChild(row);
     });
 
@@ -298,8 +216,7 @@ function onPoiSelectionChanged() {
 
 /* ---------- Selected chips ---------- */
 function renderSelectedChips() {
-  const chipsEl = $("#selected-chips");
-  if (!chipsEl) return;
+  const chipsEl = $("#selected-chips"); if (!chipsEl) return;
   const cbs = $$('#poi-groups input[type="checkbox"][data-op]');
   const sel = cbs.filter(cb => cb.checked).map(cb => cb.getAttribute("data-op"));
 
@@ -307,7 +224,8 @@ function renderSelectedChips() {
   sel.forEach(opId => {
     const op = (OVERPASS?.items || []).find(x => x.id === opId);
     if (!op) return;
-    const w = WAHOO_ITEM_BY_ID.get(op.wahoo_id);
+    const mapped = MAPPING?.map?.[op.id] || "generic";
+    const w = TYPE_BY_ID.get(mapped);
     if (!w) return;
     const chip = document.createElement("button");
     chip.className = "chip";
@@ -316,10 +234,7 @@ function renderSelectedChips() {
     chip.innerHTML = `<img src="${w.icon||""}" alt="${w.id}" onerror="this.style.display='none'"/><span>${op.label}</span>`;
     chip.addEventListener("click", () => {
       const cb = $(`#poi-groups input[data-op="${op.id}"]`);
-      if (cb) {
-        cb.checked = false;
-        cb.dispatchEvent(new Event("change", { bubbles: true }));
-      }
+      if (cb) { cb.checked = false; cb.dispatchEvent(new Event("change", { bubbles: true })); }
     });
     chipsEl.appendChild(chip);
   });
@@ -327,68 +242,48 @@ function renderSelectedChips() {
 
 /* ---------- Add-POI modal ---------- */
 function buildAddPoiModalOptions() {
-  const list = $("#add-poi-types");
-  if (!list) return;
+  const list = $("#add-poi-types"); if (!list) return;
   list.innerHTML = "";
-
-  (WAHOO?.categories || []).forEach(cat => {
+  (POI_TYPES?.categories || []).forEach(cat => {
     const box = document.createElement("div");
     box.className = "type-cat";
-
     const head = document.createElement("div");
     head.className = "type-cat-head";
     head.textContent = cat.label;
     box.appendChild(head);
-
     const items = document.createElement("div");
     items.className = "type-items";
-
-    (cat.items || [])
-      .slice()
-      .sort((a,b) => a.label.localeCompare(b.label))
-      .forEach(it => {
-        const row = document.createElement("label");
-        row.className = "type-row";
-        row.innerHTML = `
-          <input type="radio" name="poi-type" value="${it.id}">
-          <img src="${it.icon||""}" alt="${it.id}" onerror="this.style.display='none'"/>
-          <span>${it.label}</span>
-        `;
-        items.appendChild(row);
-      });
-
+    (cat.items || []).slice().sort((a,b) => a.label.localeCompare(b.label)).forEach(it => {
+      const row = document.createElement("label");
+      row.className = "type-row";
+      row.innerHTML = `<input type="radio" name="poi-type" value="${it.id}">
+        <img src="${it.icon||""}" alt="${it.id}" onerror="this.style.display='none'"/>
+        <span>${it.label}</span>`;
+      items.appendChild(row);
+    });
     box.appendChild(items);
     list.appendChild(box);
   });
-
   const first = list.querySelector('input[type="radio"][name="poi-type"]');
   if (first) first.checked = true;
 }
 
-/* ---------- Map click to place the pending POI ---------- */
+/* ---------- Map click to place POI ---------- */
 function hookMapClicksForPlacement() {
-  const map = getMap();
-  if (!map) return;
+  const map = getMap(); if (!map) return;
   map.on("click", (e) => {
     if (!document.body.classList.contains("add-poi-armed")) return;
     if (!pendingPoiTypeId) return;
-
     const { lat, lng } = e.latlng;
-    const typeMeta = WAHOO_ITEM_BY_ID.get(pendingPoiTypeId);
+    const typeMeta = TYPE_BY_ID.get(pendingPoiTypeId);
     const iconUrl = typeMeta?.icon || null;
     const name = pendingPoiName || typeMeta?.label || pendingPoiTypeId;
     const desc = pendingPoiDesc || "";
-
     addCustomPoi(lat, lng, pendingPoiTypeId, name, desc, iconUrl);
-
-    // reflect in export button immediately
     updateExportUi();
     updateCountsStatus();
-
     document.body.classList.remove("add-poi-armed");
-    pendingPoiTypeId = null;
-    pendingPoiName = "";
-    pendingPoiDesc = "";
+    pendingPoiTypeId = null; pendingPoiName = ""; pendingPoiDesc = "";
   });
 }
 
@@ -398,45 +293,35 @@ function hookUi() {
   addEventListener("dragover", e => e.preventDefault());
   addEventListener("drop", onDrop);
 
-  // Corridor width change: redraw, recompute inside flags, then update layers/export
-  const onCorridor = debounce(() => {
-    drawSearchBoxAndCorridor();
+  const onAnyRangeChange = debounce(() => {
+    drawSearchAndCorridorPolys();
     recomputeInsideFlagsForAllFetched();
     updatePoiLayers();
     updateExportUi();
     updateCountsStatus();
   }, 120);
-  $("#poi-range-m")?.addEventListener("input", onCorridor);
-  $("#poi-range-m")?.addEventListener("change", onCorridor);
+  $("#poi-range-m")?.addEventListener("input", onAnyRangeChange);
+  $("#poi-range-m")?.addEventListener("change", onAnyRangeChange);
+  $("#search-range-m")?.addEventListener("input", onAnyRangeChange);
+  $("#search-range-m")?.addEventListener("change", onAnyRangeChange);
 
-  $("#toggle-lines")?.addEventListener("change", () => {
-    SHOW_DISTANCE_LINES = !!$("#toggle-lines")?.checked;
-    updatePoiLayers();
-  });
+  $("#toggle-lines")?.addEventListener("change", () => { SHOW_DISTANCE_LINES = !!$("#toggle-lines")?.checked; updatePoiLayers(); });
 
   $("#btn-toggle-left")?.addEventListener("click", () => {
-    const el = $("#left-panel");
-    const on = !el.classList.contains("open");
-    el.classList.toggle("open", on);
-    $("#btn-toggle-left").setAttribute("aria-pressed", on ? "true" : "false");
+    const el = $("#left-panel"); const on = !el.classList.contains("open");
+    el.classList.toggle("open", on); $("#btn-toggle-left").setAttribute("aria-pressed", on ? "true" : "false");
     setTimeout(() => getMap()?.invalidateSize(), 0);
   });
   $("#btn-toggle-right")?.addEventListener("click", () => {
-    const el = $("#right-panel");
-    const on = !el.classList.contains("open");
-    el.classList.toggle("open", on);
-    $("#btn-toggle-right").setAttribute("aria-pressed", on ? "true" : "false");
+    const el = $("#right-panel"); const on = !el.classList.contains("open");
+    el.classList.toggle("open", on); $("#btn-toggle-right").setAttribute("aria-pressed", on ? "true" : "false");
     setTimeout(() => getMap()?.invalidateSize(), 0);
   });
 
-  // Fetch buttons
   $("#btn-fetch-selected")?.addEventListener("click", onFetchSelected);
   $("#btn-fetch-all")?.addEventListener("click", onFetchAll);
 
-  // Export button guard
-  $("#btn-download-gpx")?.addEventListener("click", (e) => {
-    if ($("#btn-download-gpx")?.classList.contains("disabled")) e.preventDefault();
-  });
+  $("#btn-download-gpx")?.addEventListener("click", (e) => { if ($("#btn-download-gpx")?.classList.contains("disabled")) e.preventDefault(); });
 
   $("#btn-add-poi")?.addEventListener("click", () => openAddPoiModal());
   $("#add-poi-close")?.addEventListener("click", closeAddPoiModal);
@@ -450,84 +335,63 @@ function hookUi() {
     closeAddPoiModal();
     document.body.classList.add("add-poi-armed");
   });
+  $("#add-poi-modal")?.addEventListener("click", (e) => { if (e.target === e.currentTarget) closeAddPoiModal(); });
+  document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeAddPoiModal(); });
 
-  $("#add-poi-modal")?.addEventListener("click", (e) => {
-    if (e.target === e.currentTarget) closeAddPoiModal();
-  });
+  window.addEventListener("custom-pois-changed", () => { updateExportUi(); updateCountsStatus(); });
 
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeAddPoiModal();
-  });
+  // Template switcher
+  $("#platform-select")?.addEventListener("change", async (e) => { PLATFORM = e.target.value || "wahoo"; await reloadTemplate(); });
 
-  // Keep export button in sync when custom POIs are added/removed
-  window.addEventListener("custom-pois-changed", () => {
+  // Forced export toggle (from map popups)
+  window.toggleForcedExport = (id) => {
+    if (FORCED_EXPORT.has(id)) FORCED_EXPORT.delete(id);
+    else FORCED_EXPORT.add(id);
+    updatePoiLayers();
     updateExportUi();
     updateCountsStatus();
-  });
+  };
 }
 
-function openAddPoiModal() {
-  buildAddPoiModalOptions();
-  $("#add-poi-modal")?.classList.add("open");
-  $("#add-poi-modal")?.setAttribute("aria-hidden", "false");
-  $("#add-poi-name")?.focus();
-}
-function closeAddPoiModal() {
-  $("#add-poi-modal")?.classList.remove("open");
-  $("#add-poi-modal")?.setAttribute("aria-hidden", "true");
+async function reloadTemplate() {
+  ALL_FETCHED_POIS = []; LAST_EXPORT_SET = []; FORCED_EXPORT.clear(); clearCustomPois();
+  renderAllPoisGhosted([]); renderSelectedPois([], SHOW_DISTANCE_LINES);
+  await loadConfigsSafe(); indexConfigs();
+  buildPoiPanel(); buildAddPoiModalOptions();
+  setPoiStatus(`Template switched to ${PLATFORM}.`);
+  updateExportUi(); updateCountsStatus();
 }
 
-/* ---------- GPX loading (preserve original doc/route name) ---------- */
+function openAddPoiModal() { buildAddPoiModalOptions(); $("#add-poi-modal")?.classList.add("open"); $("#add-poi-modal")?.setAttribute("aria-hidden", "false"); $("#add-poi-name")?.focus(); }
+function closeAddPoiModal() { $("#add-poi-modal")?.classList.remove("open"); $("#add-poi-modal")?.setAttribute("aria-hidden", "true"); }
+
+/* ---------- GPX loading ---------- */
 async function onFile(e) {
   try {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const text = await f.text();
-    originalFilename = f.name || "route.gpx";
-
-    // NEW: optionally drop waypoints from the base GPX
-    const drop = !!$("#opt-drop-wpts")?.checked;
-    originalGpxXmlString = drop ? stripWaypointsFromGpx(text) : text;
-
+    const f = e.target.files?.[0]; if (!f) return;
+    const text = await f.text(); originalFilename = f.name || "route.gpx";
+    const drop = !!$("#opt-drop-wpts")?.checked; originalGpxXmlString = drop ? stripWaypointsFromGpx(text) : text;
     await showGpxText(originalGpxXmlString, originalFilename);
-    drawSearchBoxAndCorridor();
-    recomputeInsideFlagsForAllFetched();
-    setPoiStatus("GPX loaded.");
-    updateExportUi();
-    updateCountsStatus();
-  } catch (err) {
-    setPoiStatus(`Loading GPX failed: ${err?.message || err}`);
-  }
+    drawSearchAndCorridorPolys(); recomputeInsideFlagsForAllFetched();
+    setPoiStatus("GPX loaded."); updateExportUi(); updateCountsStatus();
+  } catch (err) { setPoiStatus(`Loading GPX failed: ${err?.message || err}`); }
 }
-
 async function onDrop(e) {
   e.preventDefault();
   try {
     const f = e.dataTransfer?.files?.[0];
-    if (!f || !f.name?.toLowerCase().endsWith(".gpx")) {
-      setTopStatus("Drop a .gpx file.");
-      return;
-    }
-    const text = await f.text();
-    originalFilename = f.name || "route.gpx";
-
-    // NEW: optionally drop waypoints from the base GPX
-    const drop = !!$("#opt-drop-wpts")?.checked;
-    originalGpxXmlString = drop ? stripWaypointsFromGpx(text) : text;
-
+    if (!f || !f.name?.toLowerCase().endsWith(".gpx")) { setTopStatus("Drop a .gpx file."); return; }
+    const text = await f.text(); originalFilename = f.name || "route.gpx";
+    const drop = !!$("#opt-drop-wpts")?.checked; originalGpxXmlString = drop ? stripWaypointsFromGpx(text) : text;
     await showGpxText(originalGpxXmlString, originalFilename);
-    drawSearchBoxAndCorridor();
-    recomputeInsideFlagsForAllFetched();
-    setPoiStatus("GPX loaded.");
-    updateExportUi();
-    updateCountsStatus();
-  } catch (err) {
-    setPoiStatus(`Dropping GPX failed: ${err?.message || err}`);
-  }
+    drawSearchAndCorridorPolys(); recomputeInsideFlagsForAllFetched();
+    setPoiStatus("GPX loaded."); updateExportUi(); updateCountsStatus();
+  } catch (err) { setPoiStatus(`Dropping GPX failed: ${err?.message || err}`); }
 }
 
 /* ---------- Auto sample ---------- */
-const AUTO_SAMPLE_PATHS = ["./sample.gpx","./sample_with_waypoints.gpx","./data/sample.gpx"];
+const AUTO_SAMPLE_PATHS = ["./sample.gpx"];
+// const AUTO_SAMPLE_PATHS = [];
 async function autoLoadSample() {
   for (const p of AUTO_SAMPLE_PATHS) {
     try {
@@ -535,7 +399,7 @@ async function autoLoadSample() {
       if (!res.ok) continue;
       const text = await res.text();
       originalFilename = p.split("/").pop() || "sample.gpx";
-      originalGpxXmlString = text; // keep names intact
+      originalGpxXmlString = text;
       await showGpxText(originalGpxXmlString, originalFilename);
       setTopStatus(`Loaded sample: ${originalFilename}`);
       return;
@@ -552,41 +416,28 @@ async function showGpxText(text, label = "GPX") {
   setTopStatus(`Loaded: ${label} ✓`);
 }
 
-/* ---------- Corridor ---------- */
-function corridorWidthM() {
-  return Math.max(parseInt($("#poi-range-m")?.value || "100", 10), 1);
+/* ---------- Polygons ---------- */
+function searchWidthM() {
+  const v = parseInt($("#search-range-m")?.value || "500", 10);
+  return Number.isFinite(v) ? v : 500;
 }
-function getRouteBboxInflated() {
-  const line = getRouteLine();
-  if (!line) return null;
-  const baseBbox = turf.bbox(line);
-  const midLat = (baseBbox[1] + baseBbox[3]) / 2;
-  const bbox = inflateBboxForRadius(baseBbox, FETCH_BBOX_RADIUS_M, midLat);
-  return { bbox, line };
-}
-function inflateBboxForRadius(bbox, radiusM, midLat) {
-  const [minx, miny, maxx, maxy] = bbox;
-  const degPerMlat = 1.0 / 111320.0;
-  const cosLat = Math.max(Math.cos((midLat * Math.PI) / 180), 1e-6);
-  const degPerMlon = 1.0 / (111320.0 * cosLat);
-  const dx = radiusM * degPerMlon;
-  const dy = radiusM * degPerMlat;
-  return [minx - dx, miny - dy, maxx + dx, maxy + dy];
-}
-function drawSearchBoxAndCorridor() {
+function corridorWidthM() { return Math.max(parseInt($("#poi-range-m")?.value || "100", 10), 1); }
+function drawSearchAndCorridorPolys() {
   try {
-    const obj = getRouteBboxInflated();
-    if (!obj) return;
-    const { bbox, line } = obj;
-    drawSearchBox(bbox);
-    const buffered = turf.buffer(line, Math.max(corridorWidthM() / 1000, 0.005), { units: "kilometers" });
-    CORRIDOR_POLY = (buffered.type === "FeatureCollection" ? buffered.features[0] : buffered);
+    const line = getRouteLine(); if (!line) return;
+    const searchBuf = turf.buffer(line, Math.max(searchWidthM() / 1000, 0.005), { units: "kilometers", steps: 32 });
+    const searchSimp = turf.simplify(searchBuf, { tolerance: 0.0005, highQuality: false });
+    const searchTrunc = turf.truncate(searchSimp, { precision: 5, coordinates: 2 });
+    SEARCH_POLY = (searchTrunc.type === "FeatureCollection") ? searchTrunc.features[0] : searchTrunc;
+    drawSearchPolygon(SEARCH_POLY);
+    const corridorBuf = turf.buffer(line, Math.max(corridorWidthM() / 1000, 0.005), { units: "kilometers", steps: 16 });
+    CORRIDOR_POLY = (corridorBuf.type === "FeatureCollection") ? corridorBuf.features[0] : corridorBuf;
     drawCorridor(CORRIDOR_POLY);
     setTimeout(() => getMap()?.invalidateSize(), 0);
   } catch {}
 }
 
-/* ---------- Inside recompute (called on corridor changes & after fetch) ---------- */
+/* ---------- Inside recompute ---------- */
 function recomputeInsideFlagsForAllFetched() {
   if (!ALL_FETCHED_POIS.length) return;
   for (const f of ALL_FETCHED_POIS) {
@@ -597,10 +448,7 @@ function recomputeInsideFlagsForAllFetched() {
       f.properties._inside = (CORRIDOR_POLY && Number.isFinite(lat) && Number.isFinite(lon))
         ? turf.booleanPointInPolygon(pt, CORRIDOR_POLY)
         : false;
-    } catch {
-      if (!f.properties) f.properties = {};
-      f.properties._inside = false;
-    }
+    } catch { if (!f.properties) f.properties = {}; f.properties._inside = false; }
   }
 }
 
@@ -610,70 +458,53 @@ function selectedOverpassItems() {
   const selIds = cbs.filter(cb => cb.checked).map(cb => cb.getAttribute("data-op"));
   return (OVERPASS?.items || []).filter(x => selIds.includes(x.id));
 }
+async function onFetchSelected() { if (!SEARCH_POLY) { setPoiStatus("Load a GPX route first."); return; } const items = selectedOverpassItems(); await fetchAndRender(SEARCH_POLY, items); }
+async function onFetchAll() { if (!SEARCH_POLY) { setPoiStatus("Load a GPX route first."); return; } await fetchAndRender(SEARCH_POLY, OVERPASS?.items || []); }
 
-async function onFetchSelected() {
-  const route = getRouteBboxInflated();
-  if (!route) { setPoiStatus("Load a GPX route first."); return; }
-  const items = selectedOverpassItems();
-  await fetchAndRender(route.bbox, items);
-}
-
-async function onFetchAll() {
-  const route = getRouteBboxInflated();
-  if (!route) { setPoiStatus("Load a GPX route first."); return; }
-  await fetchAndRender(route.bbox, OVERPASS?.items || []);
-}
-
-async function fetchAndRender(bbox, items) {
+async function fetchAndRender(searchPoly, items) {
   try {
     setPoiStatus("Fetching POIs…");
-    const q = buildOverpassQueryFromConfig(bbox, items, 90);
+    const q = buildOverpassQueryFromConfigPoly(searchPoly, items, 90);
     const json = await overpassFetch(q);
     const features = toFeatures(json, items);
     rememberFetchedPois(features);
     setPoiStatus(`Fetched ${features.length} POIs.`);
-    updateExportUi();
-    updateCountsStatus();
-  } catch (e) {
-    setPoiStatus(`Fetch failed: ${e?.message || e}`);
-  }
+    updateExportUi(); updateCountsStatus();
+  } catch (e) { setPoiStatus(`Fetch failed: ${e?.message || e}`); }
 }
 
-/** Convert Overpass JSON → GeoJSON Feature[] with:
- *  - geometry: Point([lon,lat]) from node or way center
- *  - properties: { ...tags, _type, _iconUrl, _distance_m, _snap:[lon,lat] }
- * Mapping of tags→wahoo_id is driven ONLY by selected items (config).
- */
+/** Convert Overpass JSON → GeoJSON Feature[] */
 function toFeatures(overpassJson, selectedItems) {
   const els = Array.isArray(overpassJson?.elements) ? overpassJson.elements : [];
   const byId = new Map();
   const line = getRouteLine();
 
+  // Rules: map each selected item to its target poi_type via MAPPING
   const rules = (selectedItems || []).map(it => ({
-    wahoo: it.wahoo_id,
-    defs: Array.isArray(it.tags) ? it.tags : (Array.isArray(it.overpass) ? it.overpass : [])
+    poiTypeId: (MAPPING?.map?.[it.id] || "generic"),
+    itemId: it.id,
+    ors: Array.isArray(it.tags) ? it.tags : [],
+    ands: Array.isArray(it.tagsAll) ? it.tagsAll : []
   }));
 
-  const iconForType = (wahooType) => WAHOO_ITEM_BY_ID.get(wahooType)?.icon || null;
+  const iconForType = (poiType) => TYPE_BY_ID.get(poiType)?.icon || null;
 
   els.forEach(el => {
     const tags = el.tags || {};
     theId: {
       const id = `${el.type}/${el.id}`;
-
       const lon = (el.lon != null) ? el.lon : (el.center?.lon);
       const lat = (el.lat != null) ? el.lat : (el.center?.lat);
       if (!Number.isFinite(lat) || !Number.isFinite(lon)) break theId;
 
-      // Pick the FIRST matching rule from config; else generic.
-      let wType = "generic";
+      let typeId = "generic";
       for (const r of rules) {
-        if (r.defs.some(d => tags[d.k] === d.v)) { wType = r.wahoo; break; }
+        const orMatch = r.ors.length ? r.ors.some(d => tags[d.k] === d.v) : false;
+        const andMatch = r.ands.length ? r.ands.every(d => tags[d.k] === d.v) : false;
+        if (orMatch || andMatch) { typeId = r.poiTypeId; break; }
       }
+      const icon = iconForType(typeId);
 
-      const icon = iconForType(wType);
-
-      // snap + distance (meters) to current route
       let snap = null, distM = null;
       if (line) {
         try {
@@ -684,18 +515,8 @@ function toFeatures(overpassJson, selectedItems) {
         } catch {}
       }
 
-      const f = {
-        type: "Feature",
-        id,
-        geometry: { type: "Point", coordinates: [lon, lat] },
-        properties: {
-          ...tags,
-          _type: wType,
-          _iconUrl: icon || undefined,
-          _distance_m: distM ?? undefined,
-          _snap: snap ?? undefined
-        }
-      };
+      const f = { type: "Feature", id, geometry: { type: "Point", coordinates: [lon, lat] },
+        properties: { ...tags, _type: typeId, _iconUrl: icon || undefined, _distance_m: distM ?? undefined, _snap: snap ?? undefined, _forced: false } };
       byId.set(id, f);
     }
   });
@@ -703,119 +524,91 @@ function toFeatures(overpassJson, selectedItems) {
   return Array.from(byId.values());
 }
 
-/* ---------- Public hook called after a fetch ---------- */
+/* ---------- After fetch ---------- */
 function rememberFetchedPois(features = []) {
   ALL_FETCHED_POIS = Array.isArray(features) ? features.slice() : [];
-  // Mark inside/outside based on current corridor
   recomputeInsideFlagsForAllFetched();
   updatePoiLayers();
 }
 window.rememberFetchedPois = rememberFetchedPois;
 
 /* ---------- Selection + layers + export state ---------- */
-function selectedWahooIds() {
+function selectedTypeIds() {
   const cbs = $$('#poi-groups input[type="checkbox"][data-op]');
   const set = new Set();
-  cbs.forEach(cb => {
-    if (cb.checked) {
-      const wId = cb.getAttribute("data-wahoo");
-      if (wId) set.add(wId);
-    }
-  });
+  cbs.forEach(cb => { if (cb.checked) { const tId = cb.getAttribute("data-type"); if (tId) set.add(tId); } });
   return set;
 }
-
 function updatePoiLayers() {
+  for (const f of ALL_FETCHED_POIS) { f.properties = f.properties || {}; f.properties._forced = FORCED_EXPORT.has(f.id); }
   renderAllPoisGhosted(ALL_FETCHED_POIS);
 
-  const sel = selectedWahooIds();
+  const selTypes = selectedTypeIds();
   const insideSelected = ALL_FETCHED_POIS.filter(f => {
-    const t = f?.properties?._type || f?.properties?.type || f?.properties?.wahoo_id;
+    const t = f?.properties?._type || f?.properties?.type;
     const inside = !!f?.properties?._inside;
-    return inside && sel.has(String(t));
+    return inside && selTypes.has(String(t));
   });
 
-  LAST_INSIDE_SELECTED = insideSelected;
-  renderSelectedPois(insideSelected, SHOW_DISTANCE_LINES);
+  const forced = ALL_FETCHED_POIS.filter(f => FORCED_EXPORT.has(f.id));
+  const union = [...insideSelected]; const seen = new Set(insideSelected.map(f => f.id));
+  forced.forEach(f => { if (!seen.has(f.id)) union.push(f); });
+
+  LAST_EXPORT_SET = union;
+  renderSelectedPois(union, SHOW_DISTANCE_LINES);
 }
 
-/* ---------- Export button state + handler ---------- */
+/* ---------- Export button state ---------- */
 function updateExportUi() {
-  const btn = $("#btn-download-gpx");
-  if (!btn) return;
-
+  const btn = $("#btn-download-gpx"); if (!btn) return;
   const base = (originalFilename || "route.gpx").replace(/\.gpx$/i, "");
   btn.setAttribute("download", `${base}_enriched.gpx`);
 
   const custom = listCustomPois();
-  const canExport = !!(originalGpxXmlString && (LAST_INSIDE_SELECTED.length > 0 || custom.length > 0));
+  const canExport = !!(originalGpxXmlString && (LAST_EXPORT_SET.length > 0 || custom.length > 0));
   btn.classList.toggle("disabled", !canExport);
+  if (!canExport) { btn.removeAttribute("href"); return; }
 
-  if (!canExport) {
-    btn.removeAttribute("href");
-    return;
-  }
-
-  // Fetched inside + selected (corridor filter)
-  const exportFetched = LAST_INSIDE_SELECTED.map(f => {
+  const exportFetched = LAST_EXPORT_SET.map(f => {
     const [lon, lat] = f.geometry.coordinates;
     const tags = f.properties || {};
-    return {
-      lat, lon,
-      _type: tags._type || tags.type,
-      _distance_m: tags._distance_m,
-      tags
-    };
+    return { lat, lon, _type: tags._type || tags.type, _distance_m: tags._distance_m, tags };
   });
-
-  // Plus ALL custom POIs (always export)
-  const exportCustom = custom.map(p => ({
-    lat: p.lat,
-    lon: p.lon,
-    _type: p.type,
-    _distance_m: null,
-    tags: { name: p.label }
-  }));
-
+  const exportCustom = custom.map(p => ({ lat: p.lat, lon: p.lon, _type: p.type, _distance_m: null, tags: { name: p.label } }));
   const enriched = addPoisAsWaypointsToGpx(originalGpxXmlString, [...exportFetched, ...exportCustom]);
   const blob = new Blob([enriched], { type: "application/gpx+xml" });
-  const url = URL.createObjectURL(blob);
-  btn.setAttribute("href", url);
+  const urlOld = btn.getAttribute("href"); if (urlOld) try { URL.revokeObjectURL(urlOld); } catch {}
+  const url = URL.createObjectURL(blob); btn.setAttribute("href", url);
 }
 
-/* ---------- Counts + status composer ---------- */
+/* ---------- Counts + status ---------- */
 function computeCounts() {
   const totalFetched = ALL_FETCHED_POIS.length;
   const inCorridor = ALL_FETCHED_POIS.reduce((n, f) => n + (f?.properties?._inside ? 1 : 0), 0);
-  const selectedInCorridor = LAST_INSIDE_SELECTED.length;
+  const selectedInCorridor = ALL_FETCHED_POIS.reduce((n, f) => {
+    const selTypes = selectedTypeIds();
+    const t = f?.properties?._type || f?.properties?.type;
+    return n + ((f?.properties?._inside && selTypes.has(String(t))) ? 1 : 0);
+  }, 0);
+  const forcedCount = FORCED_EXPORT.size;
   const customCount = listCustomPois().length;
-  const exportTotal = selectedInCorridor + customCount;
-  return { totalFetched, inCorridor, selectedInCorridor, customCount, exportTotal };
+  const exportTotal = LAST_EXPORT_SET.length + customCount;
+  return { totalFetched, inCorridor, selectedInCorridor, forcedCount, customCount, exportTotal };
 }
 function countsText() {
-  const { totalFetched, inCorridor, selectedInCorridor, customCount, exportTotal } = computeCounts();
-  return `fetched: ${totalFetched} | in corridor: ${inCorridor} | selected in corridor: ${selectedInCorridor} | custom: ${customCount} | export: ${exportTotal}`;
+  const { totalFetched, inCorridor, selectedInCorridor, forcedCount, customCount, exportTotal } = computeCounts();
+  return `fetched: ${totalFetched} | in corridor: ${inCorridor} | selected in corridor: ${selectedInCorridor} | forced: ${forcedCount} | custom: ${customCount} | export: ${exportTotal}`;
 }
-function renderPoiStatus() {
-  const el = $("#poi-status");
-  if (!el) return;
-  const parts = [];
-  if (POI_UI_MSG) parts.push(POI_UI_MSG);
-  parts.push(countsText());
-  el.textContent = parts.join(" | ");
-}
+function renderPoiStatus() { const el = $("#poi-status"); if (!el) return; const parts = []; if (POI_UI_MSG) parts.push(POI_UI_MSG); parts.push(countsText()); el.textContent = parts.join(" | "); }
 function updateCountsStatus() { renderPoiStatus(); }
 
 /* ---------- Helpers ---------- */
 function setTopStatus(m) { const el = $("#status"); if (el) el.textContent = m || ""; }
 function setPoiStatus(m) { POI_UI_MSG = m || ""; renderPoiStatus(); }
 function showBootError(msg) {
-  _bootErrorShown = true;
-  const box = $("#boot-error"); if (!box) return;
-  // Normalize the opaque “Script error.” message
+  _bootErrorShown = true; const box = $("#boot-error"); if (!box) return;
   const nice = (String(msg).trim() === "Script error.")
     ? "A required library failed to load (blocked by in-app browser). Trying fallbacks… If it still doesn’t load, open this page in your default browser."
     : String(msg);
-  box.textContent = `Startup error: ${nice}`;
-  box.style.display = "block";
+  box.textContent = `Startup error: ${nice}`; box.style.display = "block";
 }

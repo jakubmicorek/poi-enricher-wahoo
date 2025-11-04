@@ -9,39 +9,12 @@ html, body { height: 100%; margin: 0; font-family: system-ui, Arial, sans-serif;
   --bar-h: 48px;
   --footer-h: 20px;
   --left-w: 380px;
-  --right-w: 420px;
-}
+  --right-w: 380px;
 
-/* Boot (top) error banner */
-.boot-error {
-  position: fixed;
-  top: 8px; left: 8px; right: 8px;
-  background: #ffefef;
-  color: #900;
-  border: 1px solid #f99;
-  padding: 8px 10px;
-  z-index: 99999;
-  border-radius: 8px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
-
-  /* --- Auto-hide animation --- */
-  /* Wait a bit, fade out, then collapse completely and ignore pointer events */
-  animation: bootAutoHide 0.8s ease-in-out 6s forwards;
+  /* NEW: fixed width for the right column (inputs + units) so rows align vertically */
+  --rg-right-col: 160px;
 }
-@keyframes bootAutoHide {
-  0%   { opacity: 1; }
-  70%  { opacity: 0; }
-  100% {
-    opacity: 0;
-    max-height: 0;
-    padding-top: 0;
-    padding-bottom: 0;
-    margin-top: 0;
-    margin-bottom: 0;
-    border-width: 0;
-    pointer-events: none;
-  }
-}
+.boot-error { position: fixed; top: 8px; left: 8px; right: 8px; background: #ffefef; color: #900; border: 1px solid #f99; padding: 8px 10px; z-index: 99999; border-radius: 8px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
 
 .topbar { position: fixed; inset: 0 0 auto 0; height: var(--bar-h); z-index: 1200; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 0 10px; background: #000; color: #fff; box-shadow: 0 2px 12px rgba(0,0,0,.2); padding-top: calc(env(safe-area-inset-top, 0px)); }
 .topbar .brand .title { font-weight: 700; letter-spacing: .2px; }
@@ -79,11 +52,41 @@ html, body { height: 100%; margin: 0; font-family: system-ui, Arial, sans-serif;
 .platform-row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
 #platform-select { height: 34px; border-radius: 8px; border:1px solid #d5dbe7; padding:0 10px; background:#fff; }
 
+/* ---------- Aligned range rows ---------- */
 .ranges-grid { display:grid; grid-template-columns: 1fr; gap: 8px; }
-.rg-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
-.rg-input { display:inline-flex; align-items:center; gap:6px; }
-.rg-input input[type="number"] { width: 90px; height: 34px; padding: 6px 8px; border-radius: 8px; border:1px solid #d5dbe7; background:#fff; }
-.rg-input .unit { font-size: 13px; color: #445; }
+
+/* CHANGED: make each row a 2-column grid so inputs align vertically */
+.rg-row {
+  display: grid;
+  grid-template-columns: 1fr var(--rg-right-col);
+  align-items: center;
+  gap: 12px;
+}
+
+/* CHANGED: make the input+unit a tiny grid so unit hugs the field */
+.rg-input {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.rg-input input[type="number"] {
+  width: 100%;
+  height: 34px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border:1px solid #d5dbe7;
+  background:#fff;
+}
+
+.rg-input .unit {
+  font-size: 13px;
+  color: #445;
+  text-align: right;
+  min-width: 2ch; /* enough for “m”, “pts”, etc. */
+}
+
 .stacky { display:flex; align-items:center; justify-content:space-between; margin-top: 8px; }
 
 #right-panel .panel { display:flex; flex-direction:column; min-height:0; }

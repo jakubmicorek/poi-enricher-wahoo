@@ -300,10 +300,15 @@ function hookUi() {
     updateExportUi();
     updateCountsStatus();
   }, 120);
+
   $("#poi-range-m")?.addEventListener("input", onAnyRangeChange);
   $("#poi-range-m")?.addEventListener("change", onAnyRangeChange);
   $("#search-range-m")?.addEventListener("input", onAnyRangeChange);
   $("#search-range-m")?.addEventListener("change", onAnyRangeChange);
+
+  // NEW: ROI subsampling control hooks
+  $("#roi-maxpoints")?.addEventListener("input", onAnyRangeChange);
+  $("#roi-maxpoints")?.addEventListener("change", onAnyRangeChange);
 
   $("#toggle-lines")?.addEventListener("change", () => { SHOW_DISTANCE_LINES = !!$("#toggle-lines")?.checked; updatePoiLayers(); });
 
@@ -391,7 +396,6 @@ async function onDrop(e) {
 
 /* ---------- Auto sample ---------- */
 const AUTO_SAMPLE_PATHS = ["./sample.gpx"];
-// const AUTO_SAMPLE_PATHS = [];
 async function autoLoadSample() {
   for (const p of AUTO_SAMPLE_PATHS) {
     try {
@@ -416,6 +420,43 @@ async function showGpxText(text, label = "GPX") {
   setTopStatus(`Loaded: ${label} ✓`);
 }
 
+/* ---------- Geometry helpers for performance ---------- */
+function thinCoords(coords, maxPoints) {
+  const n = Array.isArray(coords) ? coords.length : 0;
+  if (n <= maxPoints) return coords.slice();
+  const step = Math.ceil(n / maxPoints);
+  const out = [];
+  for (let i = 0; i < n; i += step) out.push(coords[i]);
+  if (out[out.length - 1] !== coords[n - 1]) out.push(coords[n - 1]);
+  return out;
+}
+function lightweightLine(feature, maxPerPart = 4000) {
+  if (!feature) return null;
+  const isFeat = feature.type === "Feature";
+  const geom = isFeat ? feature.geometry : feature;
+  if (!geom) return null;
+
+  if (geom.type === "LineString") {
+    const coords = thinCoords(geom.coordinates || [], maxPerPart);
+    return isFeat ? { ...feature, geometry: { type: "LineString", coordinates: coords } }
+                  : { type: "LineString", coordinates: coords };
+  }
+  if (geom.type === "MultiLineString") {
+    const parts = (geom.coordinates || []).map(part => thinCoords(part || [], maxPerPart));
+    return isFeat ? { ...feature, geometry: { type: "MultiLineString", coordinates: parts } }
+                  : { type: "MultiLineString", coordinates: parts };
+  }
+  return feature;
+}
+// NEW: read UI value (with sensible bounds)
+function roiMaxPoints() {
+  const el = $("#roi-maxpoints");
+  const val = parseInt(el?.value || "4000", 10);
+  const x = Number.isFinite(val) ? val : 4000;
+  // clamp to avoid silly values
+  return Math.min(Math.max(x, 500), 20000);
+}
+
 /* ---------- Polygons ---------- */
 function searchWidthM() {
   const v = parseInt($("#search-range-m")?.value || "500", 10);
@@ -424,14 +465,21 @@ function searchWidthM() {
 function corridorWidthM() { return Math.max(parseInt($("#poi-range-m")?.value || "100", 10), 1); }
 function drawSearchAndCorridorPolys() {
   try {
-    const line = getRouteLine(); if (!line) return;
-    const searchBuf = turf.buffer(line, Math.max(searchWidthM() / 1000, 0.005), { units: "kilometers", steps: 32 });
-    const searchSimp = turf.simplify(searchBuf, { tolerance: 0.0005, highQuality: false });
+    const baseLine = getRouteLine(); if (!baseLine) return;
+
+    // Use UI-configured lightweight copy for heavy ops
+    const lineOps = lightweightLine(baseLine, roiMaxPoints());
+
+    const searchBuf = turf.buffer(lineOps, Math.max(searchWidthM() / 1000, 0.01), { units: "kilometers", steps: 16 });
+    const searchSimp = turf.simplify(searchBuf, { tolerance: 0.0008, highQuality: false });
     const searchTrunc = turf.truncate(searchSimp, { precision: 5, coordinates: 2 });
     SEARCH_POLY = (searchTrunc.type === "FeatureCollection") ? searchTrunc.features[0] : searchTrunc;
     drawSearchPolygon(SEARCH_POLY);
-    const corridorBuf = turf.buffer(line, Math.max(corridorWidthM() / 1000, 0.005), { units: "kilometers", steps: 16 });
-    CORRIDOR_POLY = (corridorBuf.type === "FeatureCollection") ? corridorBuf.features[0] : corridorBuf;
+
+    const corridorBuf = turf.buffer(lineOps, Math.max(corridorWidthM() / 1000, 0.01), { units: "kilometers", steps: 12 });
+    const corridorTrunc = turf.truncate(corridorBuf, { precision: 5, coordinates: 2 });
+    CORRIDOR_POLY = (corridorTrunc.type === "FeatureCollection") ? corridorTrunc.features[0] : corridorTrunc;
+
     drawCorridor(CORRIDOR_POLY);
     setTimeout(() => getMap()?.invalidateSize(), 0);
   } catch {}
@@ -477,7 +525,8 @@ async function fetchAndRender(searchPoly, items) {
 function toFeatures(overpassJson, selectedItems) {
   const els = Array.isArray(overpassJson?.elements) ? overpassJson.elements : [];
   const byId = new Map();
-  const line = getRouteLine();
+  const baseLine = getRouteLine();
+  const lineForOps = baseLine ? lightweightLine(baseLine, roiMaxPoints()) : null;
 
   // Rules: map each selected item to its target poi_type via MAPPING
   const rules = (selectedItems || []).map(it => ({
@@ -506,10 +555,10 @@ function toFeatures(overpassJson, selectedItems) {
       const icon = iconForType(typeId);
 
       let snap = null, distM = null;
-      if (line) {
+      if (lineForOps) {
         try {
           const pt = turf.point([lon, lat]);
-          const snapped = turf.nearestPointOnLine(line, pt, { units: "meters" });
+          const snapped = turf.nearestPointOnLine(lineForOps, pt, { units: "meters" });
           snap  = [snapped.geometry.coordinates[0], snapped.geometry.coordinates[1]];
           distM = Math.round(turf.distance(pt, snapped, { units: "meters" }));
         } catch {}

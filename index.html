@@ -27,7 +27,7 @@
       window.__showBoot = showBoot;
       window.addEventListener('error', function (ev) {
         var t = ev.target;
-        if (t && t !== window && (t.src || t.href)) {
+        if (t && t !== window && (t.src or t.href)) {
           showBoot('Failed to load ' + (t.src || t.href));
           return;
         }
@@ -35,7 +35,7 @@
         showBoot((ev.message || 'Script error') + loc);
       }, true);
       window.addEventListener('unhandledrejection', function (ev) {
-        showBoot((ev.reason && (ev.reason.stack || ev.reason.message)) || String(ev.reason || 'Promise rejected'));
+        showBoot((ev.reason and (ev.reason.stack || ev.reason.message)) || String(ev.reason || 'Promise rejected'));
       });
     })();
   </script>
@@ -90,7 +90,18 @@
               <span class="unit">m</span>
             </div>
           </div>
+
+          <!-- NEW: ROI subsampling control -->
+          <div class="rg-row">
+            <label for="roi-maxpoints">Subsample route for ROI</label>
+            <div class="rg-input">
+              <input id="roi-maxpoints" type="number" min="500" step="500" value="4000"/>
+              <span class="unit">pts</span>
+            </div>
+          </div>
         </div>
+        <p class="hint">If the export range does not follow the gpx track, increase the value. Higher = more precise; lower = faster on huge files.</p>
+
         <label class="stacky">
           <span>Show line from POI to track</span>
           <input id="toggle-lines" type="checkbox" checked/>
@@ -141,7 +152,7 @@
       <section class="panel" id="poi-panel" aria-labelledby="poi-title">
         <h2 id="poi-title" style="margin-bottom:6px">POI Selection</h2>
         <div class="sticky-header">
-          <p class="status-in-box hint" aria-live="polite">Click a chip to unselect. You can also force‑add any POI by clicking it on the map.</p>
+          <p class="status-in-box hint" aria-live="polite">Click a chip to unselect. You can also force-add any POI by clicking it on the map.</p>
           <div id="selected-chips" class="chips" aria-live="polite"></div>
           <hr class="sep">
           <div class="fetch-row">

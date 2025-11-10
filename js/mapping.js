@@ -55,7 +55,11 @@ export function exportDisplayNameFromTags(tags = {}) {
 
 export function friendlyFromType(id) {
   if (!id) return "POI";
-  return String(id).replace(/[_-]+/g, " ").trim().replace(/\s+/g, " ").replace(/\b[a-z]/g, c => c.toUpperCase());
+  return String(id)
+    .replace(/[_-]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/\b[a-z]/g, (c) => c.toUpperCase());
 }
 
 export function formatDistance(m) {
@@ -72,13 +76,32 @@ export function prettyOpeningHours(oh) {
 }
 
 export function buildExportFields(tags = {}, poiTypeId = "generic", distanceM = null) {
-  const sym = (poiTypeId || tags._type || tags.type || "generic").toString().trim().toLowerCase();
-  let nameLabel = exportDisplayNameFromTags(tags);
-  if (!nameLabel || nameLabel.toLowerCase() === "poi") nameLabel = friendlyFromType(sym);
+  // Keep exact casing for export (<sym>/<type>)
+  const sym = (poiTypeId || tags._type || tags.type || "generic").toString().trim();
+
+  // Respect user-entered values when provided (custom POIs)
+  const exportName = tags._exportName != null ? String(tags._exportName).trim() : "";
+  const exportDesc = tags._exportDesc != null ? String(tags._exportDesc).trim() : "";
+
+  // Name: prefer explicit export name, then tags.name, then derived/friendly
+  let nameLabel =
+    exportName ||
+    (tags.name && String(tags.name).trim()) ||
+    exportDisplayNameFromTags(tags);
+
+  if (!nameLabel || nameLabel.toLowerCase() === "poi") {
+    nameLabel = friendlyFromType(sym);
+  }
+
+  // Auto parts for fallback <desc>
   const poiName = (tags.name && String(tags.name).trim()) || "";
   const dist = formatDistance(distanceM);
   const hours = tags.opening_hours ? prettyOpeningHours(tags.opening_hours) : null;
-  const parts = [sym, poiName || null, dist, hours].filter(Boolean);
-  const desc = parts.join(" | ");
+
+  // Description: if user supplied one, use it verbatim; else compose a useful summary
+  const desc = exportDesc !== ""
+    ? exportDesc
+    : [sym, poiName || null, dist, hours].filter(Boolean).join(" | ");
+
   return { nameLabel, sym, desc };
 }

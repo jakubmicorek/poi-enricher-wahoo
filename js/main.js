@@ -128,7 +128,7 @@ function indexConfigs() {
     CATEGORY_ORDER.push(cat.id);
     CATEGORY_META.set(cat.id, { label: cat.label, color: cat.color || "gray", defaultExpanded: !!cat.defaultExpanded });
     (cat.items || []).forEach(it => {
-      TYPE_BY_ID.set(it.id, { ...it, categoryId: cat.id, categoryLabel: cat.label, color: cat.color || "gray" });
+      TYPE_BY_ID.set(String(it.id).trim().toLowerCase(), { ...it, categoryId: cat.id, categoryLabel: cat.label, color: cat.color || "gray" });
     });
   });
 }
@@ -141,7 +141,7 @@ function buildPoiPanel() {
   const byCat = new Map();
   (OVERPASS?.items || []).forEach(op => {
     const mappedTypeId = MAPPING?.map?.[op.id] || "generic";
-    const w = TYPE_BY_ID.get(mappedTypeId);
+    const w = TYPE_BY_ID.get(String(mappedTypeId).trim().toLowerCase());
     if (!w) return;
     if (!byCat.has(w.categoryId)) byCat.set(w.categoryId, []);
     byCat.get(w.categoryId).push({ op, w, mappedTypeId });
@@ -225,7 +225,7 @@ function renderSelectedChips() {
     const op = (OVERPASS?.items || []).find(x => x.id === opId);
     if (!op) return;
     const mapped = MAPPING?.map?.[op.id] || "generic";
-    const w = TYPE_BY_ID.get(mapped);
+    const w = TYPE_BY_ID.get(String(mapped).trim().toLowerCase());
     if (!w) return;
     const chip = document.createElement("button");
     chip.className = "chip";
@@ -241,41 +241,67 @@ function renderSelectedChips() {
 }
 
 /* ---------- Add-POI modal ---------- */
-function buildAddPoiModalOptions() {
+function buildAddPoiModalOptions(filterText = "") {
   const list = $("#add-poi-types"); if (!list) return;
   list.innerHTML = "";
+
+  const needle = String(filterText || "").trim().toLowerCase();
+
+  let totalShown = 0;
   (POI_TYPES?.categories || []).forEach(cat => {
+    // filter items by label/id contains needle
+    const itemsFiltered = (cat.items || []).filter(it => {
+      if (!needle) return true;
+      const a = String(it.label || "").toLowerCase();
+      const b = String(it.id || "").toLowerCase();
+      return a.includes(needle) || b.includes(needle);
+    }).sort((a,b) => a.label.localeCompare(b.label));
+
+    if (!itemsFiltered.length) return;
+
     const box = document.createElement("div");
     box.className = "type-cat";
     const head = document.createElement("div");
     head.className = "type-cat-head";
     head.textContent = cat.label;
     box.appendChild(head);
+
     const items = document.createElement("div");
     items.className = "type-items";
-    (cat.items || []).slice().sort((a,b) => a.label.localeCompare(b.label)).forEach(it => {
+    itemsFiltered.forEach(it => {
       const row = document.createElement("label");
       row.className = "type-row";
       row.innerHTML = `<input type="radio" name="poi-type" value="${it.id}">
         <img src="${it.icon||""}" alt="${it.id}" onerror="this.style.display='none'"/>
         <span>${it.label}</span>`;
       items.appendChild(row);
+      totalShown++;
     });
+
     box.appendChild(items);
     list.appendChild(box);
   });
+
+  if (totalShown === 0) {
+    const empty = document.createElement("div");
+    empty.className = "hint";
+    empty.style.padding = "8px 10px";
+    empty.textContent = `No matching types${needle ? ` for “${filterText}”` : ""}.`;
+    list.appendChild(empty);
+  }
+
+  // ensure something is selected
   const first = list.querySelector('input[type="radio"][name="poi-type"]');
   if (first) first.checked = true;
 }
 
-/* ---------- Map click to place POI ---------- */
 function hookMapClicksForPlacement() {
   const map = getMap(); if (!map) return;
   map.on("click", (e) => {
     if (!document.body.classList.contains("add-poi-armed")) return;
     if (!pendingPoiTypeId) return;
     const { lat, lng } = e.latlng;
-    const typeMeta = TYPE_BY_ID.get(pendingPoiTypeId);
+    const typeMeta = TYPE_BY_ID.get(String(pendingPoiTypeId).trim().toLowerCase());
     const iconUrl = typeMeta?.icon || null;
     const name = pendingPoiName || typeMeta?.label || pendingPoiTypeId;
     const desc = pendingPoiDesc || "";
@@ -306,7 +332,6 @@ function hookUi() {
   $("#search-range-m")?.addEventListener("input", onAnyRangeChange);
   $("#search-range-m")?.addEventListener("change", onAnyRangeChange);
 
-  // NEW: ROI subsampling control hooks
   $("#roi-maxpoints")?.addEventListener("input", onAnyRangeChange);
   $("#roi-maxpoints")?.addEventListener("change", onAnyRangeChange);
 
@@ -345,10 +370,8 @@ function hookUi() {
 
   window.addEventListener("custom-pois-changed", () => { updateExportUi(); updateCountsStatus(); });
 
-  // Template switcher
   $("#platform-select")?.addEventListener("change", async (e) => { PLATFORM = e.target.value || "wahoo"; await reloadTemplate(); });
 
-  // Forced export toggle (from map popups)
   window.toggleForcedExport = (id) => {
     if (FORCED_EXPORT.has(id)) FORCED_EXPORT.delete(id);
     else FORCED_EXPORT.add(id);
@@ -367,7 +390,17 @@ async function reloadTemplate() {
   updateExportUi(); updateCountsStatus();
 }
 
-function openAddPoiModal() { buildAddPoiModalOptions(); $("#add-poi-modal")?.classList.add("open"); $("#add-poi-modal")?.setAttribute("aria-hidden", "false"); $("#add-poi-name")?.focus(); }
+function openAddPoiModal() {
+  buildAddPoiModalOptions("");
+  $("#add-poi-modal")?.classList.add("open");
+  $("#add-poi-modal")?.setAttribute("aria-hidden", "false");
+  const filter = $("#add-poi-filter");
+  if (filter) {
+    filter.value = "";
+    filter.oninput = (e) => buildAddPoiModalOptions(e.target.value);
+  }
+  $("#add-poi-name")?.focus();
+}
 function closeAddPoiModal() { $("#add-poi-modal")?.classList.remove("open"); $("#add-poi-modal")?.setAttribute("aria-hidden", "true"); }
 
 /* ---------- GPX loading ---------- */
@@ -448,12 +481,10 @@ function lightweightLine(feature, maxPerPart = 4000) {
   }
   return feature;
 }
-// NEW: read UI value (with sensible bounds)
 function roiMaxPoints() {
   const el = $("#roi-maxpoints");
   const val = parseInt(el?.value || "4000", 10);
   const x = Number.isFinite(val) ? val : 4000;
-  // clamp to avoid silly values
   return Math.min(Math.max(x, 500), 20000);
 }
 
@@ -467,7 +498,6 @@ function drawSearchAndCorridorPolys() {
   try {
     const baseLine = getRouteLine(); if (!baseLine) return;
 
-    // Use UI-configured lightweight copy for heavy ops
     const lineOps = lightweightLine(baseLine, roiMaxPoints());
 
     const searchBuf = turf.buffer(lineOps, Math.max(searchWidthM() / 1000, 0.01), { units: "kilometers", steps: 16 });
@@ -528,7 +558,6 @@ function toFeatures(overpassJson, selectedItems) {
   const baseLine = getRouteLine();
   const lineForOps = baseLine ? lightweightLine(baseLine, roiMaxPoints()) : null;
 
-  // Rules: map each selected item to its target poi_type via MAPPING
   const rules = (selectedItems || []).map(it => ({
     poiTypeId: (MAPPING?.map?.[it.id] || "generic"),
     itemId: it.id,
@@ -536,7 +565,7 @@ function toFeatures(overpassJson, selectedItems) {
     ands: Array.isArray(it.tagsAll) ? it.tagsAll : []
   }));
 
-  const iconForType = (poiType) => TYPE_BY_ID.get(poiType)?.icon || null;
+  const iconForType = (poiType) => TYPE_BY_ID.get(String(poiType).trim().toLowerCase())?.icon || null;
 
   els.forEach(el => {
     const tags = el.tags || {};
@@ -585,7 +614,7 @@ window.rememberFetchedPois = rememberFetchedPois;
 function selectedTypeIds() {
   const cbs = $$('#poi-groups input[type="checkbox"][data-op]');
   const set = new Set();
-  cbs.forEach(cb => { if (cb.checked) { const tId = cb.getAttribute("data-type"); if (tId) set.add(tId); } });
+  cbs.forEach(cb => { if (cb.checked) { const tId = cb.getAttribute("data-type"); if (tId) set.add(String(tId)); } });
   return set;
 }
 function updatePoiLayers() {
@@ -623,7 +652,21 @@ function updateExportUi() {
     const tags = f.properties || {};
     return { lat, lon, _type: tags._type || tags.type, _distance_m: tags._distance_m, tags };
   });
-  const exportCustom = custom.map(p => ({ lat: p.lat, lon: p.lon, _type: p.type, _distance_m: null, tags: { name: p.label } }));
+
+  // CHANGED: carry user-entered name & description explicitly
+  const exportCustom = custom.map(p => ({
+    lat: p.lat,
+    lon: p.lon,
+    _type: p.type,
+    _distance_m: null,
+    tags: {
+      name: p.label || "",
+      desc: p.desc || "",
+      _exportName: p.label || "",
+      _exportDesc: p.desc || ""
+    }
+  }));
+
   const enriched = addPoisAsWaypointsToGpx(originalGpxXmlString, [...exportFetched, ...exportCustom]);
   const blob = new Blob([enriched], { type: "application/gpx+xml" });
   const urlOld = btn.getAttribute("href"); if (urlOld) try { URL.revokeObjectURL(urlOld); } catch {}

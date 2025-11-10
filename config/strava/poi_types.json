@@ -7,7 +7,7 @@
       "color": "gray",
       "defaultExpanded": false,
       "items": [
-        { "id": "Generic", "label": "Generic", "icon": "icons/undefined.svg" }
+        { "id": "Generic", "label": "Generic", "icon": "icons/strava/strava-generic-wpt-icon.png" }
       ]
     },
     {
@@ -16,9 +16,9 @@
       "color": "red",
       "defaultExpanded": false,
       "items": [
-        { "id": "Alert", "label": "Alert", "icon": "icons/undefined.svg" },
-        { "id": "Aid Station", "label": "Aid Station", "icon": "icons/undefined.svg" },
-        { "id": "Pharmacy", "label": "Pharmacy", "icon": "icons/undefined.svg" }
+        { "id": "Alert", "label": "Alert", "icon": "icons/strava/strava-alert-wpt-icon.png" },
+        { "id": "Aid Station", "label": "Aid Station", "icon": "icons/strava/strava-aid_station-wpt-icon.png" },
+        { "id": "Pharmacy", "label": "Pharmacy", "icon": "icons/strava/strava-pharmacy-wpt-icon.png" }
       ]
     },
     {
@@ -27,11 +27,11 @@
       "color": "orange",
       "defaultExpanded": true,
       "items": [
-        { "id": "Bars", "label": "Bars", "icon": "icons/undefined.svg" },
-        { "id": "Bike Shop", "label": "Bike Shop", "icon": "icons/undefined.svg" },
-        { "id": "Coffee", "label": "Coffee", "icon": "icons/undefined.svg" },
-        { "id": "Restaurant", "label": "Restaurant", "icon": "icons/undefined.svg" },
-        { "id": "Grocery", "label": "Grocery", "icon": "icons/undefined.svg" }
+        { "id": "Water Source", "label": "Water Source", "icon": "icons/strava/strava-water_source-wpt-icon.png" },
+        { "id": "Bar", "label": "Bar", "icon": "icons/strava/strava-bar-wpt-icon.png" },
+        { "id": "Coffee", "label": "Coffee", "icon": "icons/strava/strava-coffee-wpt-icon.png" },
+        { "id": "Restaurant", "label": "Restaurant", "icon": "icons/strava/strava-restaurant-wpt-icon.png" },
+        { "id": "Grocery", "label": "Grocery", "icon": "icons/strava/strava-grocery-wpt-icon.png" }
       ]
     },
     {
@@ -40,10 +40,12 @@
       "color": "blue",
       "defaultExpanded": true,
       "items": [
-        { "id": "Lodging", "label": "Lodging", "icon": "icons/undefined.svg" },
-        { "id": "Restroom", "label": "Restroom", "icon": "icons/undefined.svg" },
-        { "id": "Water Source", "label": "Water Source", "icon": "icons/undefined.svg" },
-        { "id": "Parking", "label": "Parking", "icon": "icons/undefined.svg" }
+        { "id": "Lodging", "label": "Lodging", "icon": "icons/strava/strava-lodging-wpt-icon.png" },
+        { "id": "Restroom", "label": "Restroom", "icon": "icons/strava/strava-restroom-wpt-icon.png" },
+        { "id": "Bike Shop", "label": "Bike Shop", "icon": "icons/strava/strava-bike_shop-wpt-icon.png" },
+        { "id": "Parking", "label": "Parking", "icon": "icons/strava/strava-parking-wpt-icon.png" },
+        { "id": "Rest Area", "label": "Rest Area", "icon": "icons/strava/strava-rest_area-wpt-icon.png" },
+        { "id": "Camp Site", "label": "Camp Site", "icon": "icons/strava/strava-camp_site-wpt-icon.png" }
       ]
     },
     {
@@ -52,12 +54,14 @@
       "color": "green",
       "defaultExpanded": true,
       "items": [
-        { "id": "Park", "label": "Park", "icon": "icons/undefined.svg" },
-        { "id": "Trailhead", "label": "Trailhead", "icon": "icons/undefined.svg" },
-        { "id": "Peak", "label": "Peak", "icon": "icons/undefined.svg" },
-        { "id": "Art", "label": "Art", "icon": "icons/undefined.svg" },
-        { "id": "Attraction", "label": "Attraction", "icon": "icons/undefined.svg" },
-        { "id": "Monument", "label": "Monument", "icon": "icons/undefined.svg" }
+        { "id": "Park", "label": "Park", "icon": "icons/strava/strava-park-wpt-icon.png" },
+        { "id": "Trailhead", "label": "Trailhead", "icon": "icons/strava/strava-trailhead-wpt-icon.png" },
+        { "id": "Peak", "label": "Peak", "icon": "icons/strava/strava-peak-wpt-icon.png" },
+        { "id": "Viewpoint", "label": "Viewpoint", "icon": "icons/strava/strava-viewpoint-wpt-icon.png" },
+        { "id": "Beach", "label": "Beach", "icon": "icons/strava/strava-beach-wpt-icon.png" },
+        { "id": "Art", "label": "Art", "icon": "icons/strava/strava-art-wpt-icon.png" },
+        { "id": "Attraction", "label": "Attraction", "icon": "icons/strava/strava-attraction-wpt-icon.png" },
+        { "id": "Monument", "label": "Monument", "icon": "icons/strava/strava-monument-wpt-icon.png" }
       ]
     },
     {
@@ -66,10 +70,12 @@
       "color": "magenta",
       "defaultExpanded": false,
       "items": [
-        { "id": "Distance marker", "label": "Distance marker", "icon": "icons/undefined.svg" },
-        { "id": "Meeting spot", "label": "Meeting spot", "icon": "icons/undefined.svg" },
-        { "id": "Segment start", "label": "Segment start", "icon": "icons/undefined.svg" },
-        { "id": "Segment end", "label": "Segment end", "icon": "icons/undefined.svg" }
+        { "id": "Distance Marker", "label": "Distance Marker", "icon": "icons/strava/strava-distance_marker-wpt-icon.png" },
+        { "id": "Meeting Spot", "label": "Meeting Spot", "icon": "icons/strava/strava-meeting_spot-wpt-icon.png" },
+        { "id": "Segment Start", "label": "Segment Start", "icon": "icons/strava/strava-segment_start-wpt-icon.png" },
+        { "id": "Segment End", "label": "Segment End", "icon": "icons/strava/strava-segment_end-wpt-icon.png" },
+        { "id": "Transition Zone", "label": "Transition Zone", "icon": "icons/strava/strava-transition_zone-wpt-icon.png" },
+        { "id": "Checkpoint", "label": "Checkpoint", "icon": "icons/strava/strava-checkpoint-wpt-icon.png" }
       ]
     }
   ]

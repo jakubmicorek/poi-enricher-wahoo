@@ -5,28 +5,19 @@ export function stripWaypointsFromGpx(gpxXmlString) {
   const doc = new DOMParser().parseFromString(gpxXmlString, "text/xml");
   const gpx = doc.documentElement;
 
-  // Collect ALL waypoint elements regardless of namespace prefix (e.g., <wpt> or <gpx:wpt>)
   const toRemove = [];
-  // TreeWalker is robust and fast for XML docs; matches by localName
   const walker = doc.createTreeWalker(gpx, NodeFilter.SHOW_ELEMENT);
   for (let n = walker.currentNode; n; n = walker.nextNode()) {
     const ln = (n.localName || n.nodeName || "").toLowerCase();
     if (ln === "wpt") toRemove.push(n);
   }
 
-  // Remove them (and trim any surrounding empty text nodes for neatness)
   toRemove.forEach((n) => {
     const p = n.parentNode;
     if (!p) return;
-    // remove the waypoint element
     p.removeChild(n);
-    // clean adjacent whitespace-only text nodes (purely cosmetic)
-    if (p.firstChild && p.firstChild.nodeType === 3 && !p.firstChild.nodeValue.trim()) {
-      p.removeChild(p.firstChild);
-    }
-    if (p.lastChild && p.lastChild.nodeType === 3 && !p.lastChild.nodeValue.trim()) {
-      p.removeChild(p.lastChild);
-    }
+    if (p.firstChild && p.firstChild.nodeType === 3 && !p.firstChild.nodeValue.trim()) p.removeChild(p.firstChild);
+    if (p.lastChild && p.lastChild.nodeType === 3 && !p.lastChild.nodeValue.trim()) p.removeChild(p.lastChild);
   });
 
   return new XMLSerializer().serializeToString(doc);
@@ -90,7 +81,8 @@ export function addPoisAsWaypointsToGpx(gpxXmlString, pois) {
 
   (pois || []).forEach(p => {
     const tags = p.tags || {};
-    const poiTypeId = (p._type || tags._type || tags.type || "generic").toString().trim().toLowerCase();
+    // IMPORTANT: do NOT lowercase here—preserve as defined in poi_types
+    const poiTypeId = (p._type || tags._type || tags.type || "generic").toString().trim();
     const dist = p._distance_m ?? null;
 
     const { nameLabel, sym, desc } = buildExportFields(tags, poiTypeId, dist);

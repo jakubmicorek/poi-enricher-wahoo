@@ -6,26 +6,32 @@
     "restaurant": "Restaurant",
     "fast_food": "Restaurant",
     "bakery": "Restaurant",
-    "bar": "Bars",
-    "pub": "Bars",
+    "bar": "Bar",
+    "pub": "Bar",
     "supermarket": "Grocery",
     "convenience": "Grocery",
+    "fuel": "Restaurant",
     "pharmacy": "Pharmacy",
     "first_aid": "Aid Station",
     "lodging": "Lodging",
     "toilets": "Restroom",
+
     "bicycle_shop": "Bike Shop",
     "bicycle_repair": "Bike Shop",
+
     "parking": "Parking",
-    "camp_site": "Camp site",
+    "camp_site": "Camp Site",
     "park": "Park",
-    "rest_area": "Rest area",
-    "shelter": "Rest area",
+    "rest_area": "Rest Area",
+    "shelter": "Rest Area",
     "trailhead": "Trailhead",
     "viewpoint": "Viewpoint",
     "peak": "Peak",
     "attraction": "Attraction",
     "artwork": "Art",
-    "monument": "Monument"
+    "monument": "Monument",
+
+    "shower": "Rest Area",
+    "bicycle_rental": "Bike Shop"
   }
 }

@@ -27,7 +27,7 @@
       window.__showBoot = showBoot;
       window.addEventListener('error', function (ev) {
         var t = ev.target;
-        if (t && t !== window && (t.src or t.href)) {
+        if (t && t !== window && (t.src || t.href)) {
           showBoot('Failed to load ' + (t.src || t.href));
           return;
         }
@@ -35,7 +35,7 @@
         showBoot((ev.message || 'Script error') + loc);
       }, true);
       window.addEventListener('unhandledrejection', function (ev) {
-        showBoot((ev.reason and (ev.reason.stack || ev.reason.message)) || String(ev.reason || 'Promise rejected'));
+        showBoot((ev.reason && (ev.reason.stack || ev.reason.message)) || String(ev.reason || 'Promise rejected'));
       });
     })();
   </script>
@@ -182,6 +182,8 @@
         </label>
         <div class="field">
           <span>POI type</span>
+          <!-- NEW: filter box for types -->
+          <input id="add-poi-filter" type="text" placeholder="Filter types (try: segment, trailhead, water…)"/>
           <div id="add-poi-types" class="type-list"></div>
         </div>
         <p class="hint">Click “Place on map”, then click the map where the POI should go.</p>

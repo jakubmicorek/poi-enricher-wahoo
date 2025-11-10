@@ -66,16 +66,19 @@ export function renderTrackAndWaypoints(gj) {
     },
     onEachFeature: (f, layer) => {
       const p = f?.properties || {};
-      const wahooId = (p.type || p.sym || "generic").toString().trim().toLowerCase();
+      const wahooIdLower = (p.type || p.sym || "generic").toString().trim().toLowerCase();
 
-      const { nameLabel: fallbackName } = buildExportFields(p, wahooId, null);
+      // Use original casing for export-related fields where available
+      const exportType = (p.type || p.sym || wahooIdLower).toString().trim();
+
+      const { nameLabel: fallbackName } = buildExportFields(p, exportType, null);
       const titleName = (p.name && String(p.name).trim()) || fallbackName;
       const descText  = (p.desc != null) ? String(p.desc) : "";
 
       const latlng = layer.getLatLng();
       let gpxBlock = "";
       if (latlng && Number.isFinite(latlng.lat) && Number.isFinite(latlng.lng)) {
-        const symText = (p.type || p.sym || wahooId).toString().trim().toLowerCase();
+        const symText = exportType; // preserve exact casing in GPX
         const gpx = buildGpxSnippet(latlng.lat, latlng.lng, titleName, descText, symText);
         gpxBlock = `<div class="subhead">GPX</div><pre class="code">${esc(gpx)}</pre>`;
       }
@@ -87,7 +90,7 @@ export function renderTrackAndWaypoints(gj) {
       if (p.sym)    rows.push(row("Symbol", String(p.sym)));
 
       layer.bindPopup(`<div class="popup">
-          <div class="title">${maybeIconImgFromSym(wahooId)}<span>${esc(titleName)}</span></div>
+          <div class="title">${maybeIconImgFromSym(wahooIdLower)}<span>${esc(titleName)}</span></div>
           ${rows.join("") || "<div class='kv'><em>No extra info</em></div>"}
           ${gpxBlock}
         </div>`);
@@ -98,31 +101,26 @@ export function renderTrackAndWaypoints(gj) {
 export function drawSearchPolygon(polyFeature) {
   try { searchPolyLayer.clearLayers(); } catch {}
 
-  // 1) Draw the visible search polygon outline (unchanged behavior).
+  // 1) Visible search polygon outline (no fill).
   L.geoJSON(polyFeature, { style: { color: "#000000", weight: 1, fill: false, opacity: 0.7 }})
     .addTo(searchPolyLayer);
 
-  // 2) Add an inverse “dimmer” polygon: a world rectangle with the search polygon as a hole.
-  //    This visually dims everything OUTSIDE the search polygon, while leaving the inside clear.
+  // 2) Inverse dimmer outside the search polygon.
   try {
     const geom = polyFeature.type === "Feature" ? polyFeature.geometry : polyFeature;
     if (geom?.type === "Polygon" || geom?.type === "MultiPolygon") {
-      // Build outer ring that covers the whole world (lon/lat order).
-      // Slightly inside world edges to satisfy ring validity across projections.
       const WORLD = [
-        [-179.999, -85],  // lon, lat
+        [-179.999, -85],
         [ 179.999, -85],
         [ 179.999,  85],
         [-179.999,  85],
         [-179.999, -85]
       ];
 
-      // Extract outer rings from the search polygon feature.
       const holes = [];
       if (geom.type === "Polygon" && Array.isArray(geom.coordinates?.[0])) {
         holes.push(geom.coordinates[0]);
       } else if (geom.type === "MultiPolygon" && Array.isArray(geom.coordinates?.[0]?.[0])) {
-        // For multi-polygons, use the first polygon's outer ring as the hole.
         holes.push(geom.coordinates[0][0]);
       }
 
@@ -131,7 +129,6 @@ export function drawSearchPolygon(polyFeature) {
           type: "Feature",
           geometry: {
             type: "Polygon",
-            // Even-odd fill: first ring = outer world rect, subsequent rings = holes (the visible search area)
             coordinates: [WORLD, ...holes]
           },
           properties: {}
@@ -143,8 +140,8 @@ export function drawSearchPolygon(polyFeature) {
             color: "#000000",
             weight: 0,
             fill: true,
-            fillOpacity: 0.2,   // <— outside dim strength
-            fillRule: "evenodd"  // important: carve a hole for the search polygon
+            fillOpacity: 0.2,
+            fillRule: "evenodd"
           }
         }).addTo(searchPolyLayer);
       }
@@ -224,18 +221,24 @@ export function addCustomPoi(lat, lon, poiTypeId, label, desc = "", iconUrl = nu
   const id = `custom:${++_customId}`;
 
   const icon = iconUrl
-  ? L.icon({
-      iconUrl,
-      iconSize: [28, 28],
-      iconAnchor: [14, 28],
-      popupAnchor: [0, -24],
-      className: "poi-png"
-    })
-  : fallbackDivIcon("C");
+    ? L.icon({
+        iconUrl,
+        iconSize: [28, 28],
+        iconAnchor: [14, 28],
+        popupAnchor: [0, -24],
+        className: "poi-png"
+      })
+    : fallbackDivIcon("C");
 
   const m = L.marker([lat, lon], { icon }).addTo(customPoisLayer);
 
-  const tags = { name: label || "" };
+  // Pass user-entered values so export uses them verbatim
+  const tags = {
+    name: label || "",
+    _exportName: label || "",
+    _exportDesc: desc || ""
+  };
+
   const { nameLabel, sym, desc: descLine } = buildExportFields(tags, (poiTypeId || "generic"), null);
 
   const latFixed = Number(lat).toFixed(5);
@@ -289,8 +292,9 @@ function buildPoiPopup(feature, distanceM, includeGpxSnippet=false, allowForce=f
   const props = feature?.properties || {};
   const [lon, lat] = feature?.geometry?.coordinates || [null, null];
 
-  const poiTypeId = (props?._type || props?.type || "generic").toString().trim().toLowerCase();
-  const { nameLabel, sym, desc } = buildExportFields(props, poiTypeId, distanceM);
+  // Use exact type casing for export/GPX fields
+  const exportType = (props?._type || props?.type || "generic").toString().trim();
+  const { nameLabel, sym, desc } = buildExportFields(props, exportType, distanceM);
 
   const rows = [];
   if (props?.name)          rows.push(row("Name", String(props.name)));
@@ -311,7 +315,7 @@ function buildPoiPopup(feature, distanceM, includeGpxSnippet=false, allowForce=f
     : "";
 
   return `<div class="popup">
-    <div class="title">${maybeIconImg(props, poiTypeId)}<span>${esc(nameLabel)}</span></div>
+    <div class="title">${maybeIconImg(props, exportType.toLowerCase())}<span>${esc(nameLabel)}</span></div>
     ${rows.length ? rows.join("") : ""}
     ${gpxBlock}
     ${action}
